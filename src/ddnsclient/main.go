@@ -11,13 +11,13 @@ import (
 	"time"
 )
 
-type BasicAuthItem struct {
+type BasicAuthConfigurationItem struct {
 	UserName string `json:"username"`
 	Password string `json:"password"`
 	Url      string `json:"url"`
 }
 
-type DnspodItem struct {
+type DnspodConfigurationItem struct {
 	UserName  string `json:"username"`
 	Password  string `json:"password"`
 	Domain    string `json:"domain"`
@@ -25,32 +25,32 @@ type DnspodItem struct {
 }
 
 type Setting struct {
-	BasicAuthItems []BasicAuthItem `json:"basic"`
-	DnspodItems    []DnspodItem    `json:"dnspod"`
+	BasicAuthItems []BasicAuthConfigurationItem `json:"basic"`
+	DnspodItems    []DnspodConfigurationItem    `json:"dnspod"`
 }
 
-type DomainItem struct {
+type DnspodDomainItem struct {
 	Id   int    `json:"id"`
 	Name string `json:"name"`
 }
 
-type DomainList struct {
-	Domains []DomainItem `json:"domains"`
+type DnspodDomainList struct {
+	Domains []DnspodDomainItem `json:"domains"`
 }
 
-type RecordItem struct {
+type DnspodRecordItem struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
 }
 
-type RecordList struct {
-	Records []RecordItem `json:"records"`
+type DnspodRecordList struct {
+	Records []DnspodRecordItem `json:"records"`
 }
 
 var (
 	currentExternalIP string
 	lastExternalIP    string
-	domainList        = &DomainList{}
+	dnspodDomainList  = &DnspodDomainList{}
 )
 
 func getCurrentExternalIP() string {
@@ -91,13 +91,13 @@ func basicAuthorizeHttpRequest(user string, password string, requestUrl string) 
 
 func dnspodRequest(user string, password string, domain string, sub_domain string) {
 	needDomainList := false
-	if len(domainList.Domains) == 0 {
+	if len(dnspodDomainList.Domains) == 0 {
 		needDomainList = true
 	}
 	var domainId int = 0
 	if needDomainList == false {
 		needDomainList = true
-		for _, v := range domainList.Domains {
+		for _, v := range dnspodDomainList.Domains {
 			if v.Name == domain {
 				needDomainList = false
 				domainId = v.Id
@@ -126,13 +126,13 @@ func dnspodRequest(user string, password string, domain string, sub_domain strin
 			return
 		}
 
-		if err = json.Unmarshal(body, &domainList); err != nil {
+		if err = json.Unmarshal(body, &dnspodDomainList); err != nil {
 			fmt.Printf("unmarshalling domain list %s failed", string(body))
 			return
 		}
 	}
 	foundDomain := false
-	for _, v := range domainList.Domains {
+	for _, v := range dnspodDomainList.Domains {
 		if v.Name == domain {
 			foundDomain = true
 			domainId = v.Id
@@ -164,7 +164,7 @@ func dnspodRequest(user string, password string, domain string, sub_domain strin
 		return
 	}
 
-	recordList := new(RecordList)
+	recordList := new(DnspodRecordList)
 	if err = json.Unmarshal(body, recordList); err != nil {
 		fmt.Printf("unmarshalling record list %s failed", string(body))
 		fmt.Println(err)
