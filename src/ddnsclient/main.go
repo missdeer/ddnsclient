@@ -54,7 +54,22 @@ var (
 )
 
 func getCurrentExternalIP() string {
-	return ""
+	client := &http.Client{}
+	ifconfigUrl := "https://ifconfig.minidump.info"
+	req, err := http.NewRequest("GET", ifconfigUrl, nil)
+	req.Header.Set("User-Agent", "curl/7.41.0")
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Printf("request %s failed", ifconfigUrl)
+		return ""
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("reading ifconfig response failed")
+		return ""
+	}
+	return string(body)
 }
 
 func basicAuthorizeHttpRequest(user string, password string, requestUrl string) {
@@ -246,7 +261,7 @@ func main() {
 		select {
 		case <-timer.C:
 			currentExternalIP = getCurrentExternalIP()
-			if lastExternalIP != currentExternalIP {
+			if len(currentExternalIP) != 0 && lastExternalIP != currentExternalIP {
 				for _, v := range setting.BasicAuthItems {
 					basicAuthorizeHttpRequest(v.UserName, v.Password, v.Url)
 				}
