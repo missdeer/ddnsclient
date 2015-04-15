@@ -26,6 +26,10 @@ type Setting struct {
 	DnspodItems    []DnspodItem    `json:"dnspod"`
 }
 
+var (
+	currentExternalIP string
+)
+
 func getCurrentExternalIP() string {
 	return ""
 }
@@ -40,8 +44,11 @@ func basicAuthorizeHttpRequest(user string, password string, requestUrl string) 
 		return
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
-	fmt.Println(string(body))
+	_, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Errorf("reading response failed")
+		return
+	}
 }
 
 func dnspodRequest(user string, password string, domain string, sub_domain string) {
@@ -75,6 +82,7 @@ func main() {
 		return
 	}
 
+	currentExternalIP = getCurrentExternalIP()
 	for _, v := range setting.BasicAuthItems {
 		basicAuthorizeHttpRequest(v.UserName, v.Password, v.Url)
 	}
