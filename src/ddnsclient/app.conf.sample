@@ -18,7 +18,7 @@
       "domain": "domain.com",
       "sub_domain": "subdomain"
     }
-  ]
+  ],
   "cloudflare": [
     {
       "username": "xxxx@domain.com",
