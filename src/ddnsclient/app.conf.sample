@@ -1,13 +1,11 @@
 {
 	"basic" : [ 
 	{
-		"type": "basic",
 		"username": "xxxx",
 		"password": "ppaassss",
 		"url": "http://ddns.oray.com/ph/update?hostname=xxxx.vicp.net"
 	},
 	{
-		"type": "basic",
 		"username": "xxxx",
 		"password": "ppaassss",
 		"url": "http://members.3322.net/dyndns/update?system=dyndns&hostname=xxxx.f3322.net"
@@ -15,7 +13,6 @@
 	],
 	"dnspod": [
 	{
-		"type": "dnspod",
 		"username": "xxxx",
 		"password": "ppaassss",
 		"domain": "domain.com",
