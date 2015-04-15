@@ -5,3 +5,4 @@ Support:
 
 - basic http authorization services, such as pubyum.com, oray.com and so on
 - dnspod.cn
+- cloudflare.com

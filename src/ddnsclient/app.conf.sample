@@ -19,4 +19,12 @@
       "sub_domain": "subdomain"
     }
   ]
+  "cloudflare": [
+    {
+      "username": "xxxx@domain.com",
+      "token": "ppaassss",
+      "domain": "domain.com",
+      "sub_domain": "subdomain"
+    }
+  ]
 }
