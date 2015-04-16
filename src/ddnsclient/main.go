@@ -418,12 +418,12 @@ func main() {
 		return
 	}
 
-	updateDDNS(setting)
+	go updateDDNS(setting)
 	timer := time.NewTicker(time.Duration(1) * time.Minute) // every 1 minute
 	for {
 		select {
 		case <-timer.C:
-			updateDDNS(setting)
+			go updateDDNS(setting)
 		}
 	}
 	timer.Stop()
