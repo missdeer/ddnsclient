@@ -56,9 +56,9 @@ type DnspodRecordList struct {
 }
 
 type CloudflareRecordItem struct {
-	Id   string `json:"rec_id"`
+	Id          string `json:"rec_id"`
 	DisplayName string `json:"display_name"`
-	Type string `json:"type"`
+	Type        string `json:"type"`
 }
 
 type CloudflareRecords struct {
@@ -91,7 +91,7 @@ var (
 	dnspodDomainList  = &DnspodDomainList{}
 )
 
-func getCurrentExternalIP() string {
+func getCurrentExternalIP() (string, error) {
 	client := &http.Client{}
 	ifconfigUrl := "https://ifconfig.minidump.info"
 	req, err := http.NewRequest("GET", ifconfigUrl, nil)
@@ -99,19 +99,19 @@ func getCurrentExternalIP() string {
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Printf("request %s failed", ifconfigUrl)
-		return ""
+		return "", err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Printf("reading ifconfig response failed\n")
-		return ""
+		return "", err
 	}
 
 	for i := len(body); i > 0 && (body[i-1] < '0' || body[i-1] > '9'); i = len(body) {
 		body = body[:i-1]
 	}
-	return string(body)
+	return string(body), nil
 }
 
 func basicAuthorizeHttpRequest(user string, password string, requestUrl string) {
@@ -179,7 +179,7 @@ func cloudflareRequest(user string, token string, domain string, sub_domain stri
 			"ttl":     {"1"},
 			"type":    {"A"},
 			"name":    {sub_domain},
-			"content": {getCurrentExternalIP()},
+			"content": {currentExternalIP},
 		})
 		if err != nil {
 			fmt.Printf("request cloudflare new record failed\n")
@@ -213,7 +213,7 @@ func cloudflareRequest(user string, token string, domain string, sub_domain stri
 		"ttl":          {"1"},
 		"id":           {recordId},
 		"name":         {sub_domain},
-		"content":      {getCurrentExternalIP()},
+		"content":      {currentExternalIP},
 	})
 	if err != nil {
 		fmt.Printf("request cloudflare records edit failed\n")
@@ -376,7 +376,12 @@ func dnspodRequest(user string, password string, domain string, sub_domain strin
 }
 
 func updateDDNS(setting *Setting) {
-	currentExternalIP = getCurrentExternalIP()
+	var err error
+	currentExternalIP, err = getCurrentExternalIP()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	if len(currentExternalIP) != 0 && lastExternalIP != currentExternalIP {
 		for _, v := range setting.BasicAuthItems {
 			basicAuthorizeHttpRequest(v.UserName, v.Password, v.Url)
