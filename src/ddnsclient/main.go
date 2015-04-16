@@ -57,7 +57,7 @@ type DnspodRecordList struct {
 
 type CloudflareRecordItem struct {
 	Id   string `json:"rec_id"`
-	Name string `json:"name"`
+	DisplayName string `json:"display_name"`
 	Type string `json:"type"`
 }
 
@@ -163,7 +163,7 @@ func cloudflareRequest(user string, token string, domain string, sub_domain stri
 	foundRecord := false
 	var recordId string
 	for _, v := range recordList.Response.Recs.Objs {
-		if v.Type == "A" && v.Name == sub_domain {
+		if v.Type == "A" && v.DisplayName == sub_domain {
 			recordId = v.Id
 			foundRecord = true
 			break
