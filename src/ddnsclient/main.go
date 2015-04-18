@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -57,9 +58,9 @@ type DnspodRecordList struct {
 }
 
 type CloudflareRecordItem struct {
-	Id   string `json:"rec_id"`
-	Name string `json:"name"`
-	Type string `json:"type"`
+	Id          string `json:"rec_id"`
+	DisplayName string `json:"display_name"`
+	Type        string `json:"type"`
 }
 
 type CloudflareRecords struct {
@@ -92,7 +93,7 @@ var (
 	dnspodDomainList  = &DnspodDomainList{}
 )
 
-func getCurrentExternalIP() string {
+func getCurrentExternalIP() (string, error) {
 	client := &http.Client{}
 	ifconfigUrl := "https://ifconfig.minidump.info"
 	req, err := http.NewRequest("GET", ifconfigUrl, nil)
@@ -100,13 +101,13 @@ func getCurrentExternalIP() string {
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Printf("request %s failed", ifconfigUrl)
-		return ""
+		return "", err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Printf("reading ifconfig response failed\n")
-		return ""
+		return "", err
 	}
 
 	for i := len(body); i > 0 && (body[i-1] < '0' || body[i-1] > '9'); i = len(body) {
@@ -114,10 +115,10 @@ func getCurrentExternalIP() string {
 	}
 
 	if matched, err := regexp.Match(`^([0-9]{1,3}\.){3,3}[0-9]{1,3}$`, body); err == nil && matched == true {
-		return string(body)
+		return string(body), nil
 	}
 
-	return ""
+	return "", errors.New("invalid IP address")
 }
 
 func basicAuthorizeHttpRequest(user string, password string, requestUrl string) {
@@ -169,7 +170,7 @@ func cloudflareRequest(user string, token string, domain string, sub_domain stri
 	foundRecord := false
 	var recordId string
 	for _, v := range recordList.Response.Recs.Objs {
-		if v.Type == "A" && v.Name == sub_domain {
+		if v.Type == "A" && v.DisplayName == sub_domain {
 			recordId = v.Id
 			foundRecord = true
 			break
@@ -185,7 +186,7 @@ func cloudflareRequest(user string, token string, domain string, sub_domain stri
 			"ttl":     {"1"},
 			"type":    {"A"},
 			"name":    {sub_domain},
-			"content": {getCurrentExternalIP()},
+			"content": {currentExternalIP},
 		})
 		if err != nil {
 			fmt.Printf("request cloudflare new record failed\n")
@@ -219,7 +220,7 @@ func cloudflareRequest(user string, token string, domain string, sub_domain stri
 		"ttl":          {"1"},
 		"id":           {recordId},
 		"name":         {sub_domain},
-		"content":      {getCurrentExternalIP()},
+		"content":      {currentExternalIP},
 	})
 	if err != nil {
 		fmt.Printf("request cloudflare records edit failed\n")
@@ -382,7 +383,12 @@ func dnspodRequest(user string, password string, domain string, sub_domain strin
 }
 
 func updateDDNS(setting *Setting) {
-	currentExternalIP = getCurrentExternalIP()
+	var err error
+	currentExternalIP, err = getCurrentExternalIP()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	if len(currentExternalIP) != 0 && lastExternalIP != currentExternalIP {
 		for _, v := range setting.BasicAuthItems {
 			basicAuthorizeHttpRequest(v.UserName, v.Password, v.Url)
@@ -424,12 +430,12 @@ func main() {
 		return
 	}
 
-	updateDDNS(setting)
+	go updateDDNS(setting)
 	timer := time.NewTicker(time.Duration(1) * time.Minute) // every 1 minute
 	for {
 		select {
 		case <-timer.C:
-			updateDDNS(setting)
+			go updateDDNS(setting)
 		}
 	}
 	timer.Stop()
