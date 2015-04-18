@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strconv"
 	"time"
 )
@@ -111,7 +112,12 @@ func getCurrentExternalIP() string {
 	for i := len(body); i > 0 && (body[i-1] < '0' || body[i-1] > '9'); i = len(body) {
 		body = body[:i-1]
 	}
-	return string(body)
+
+	if matched, err := regexp.Match(`^([0-9]{1,3}\.){3,3}[0-9]{1,3}$`, body); err == nil && matched == true {
+		return string(body)
+	}
+
+	return ""
 }
 
 func basicAuthorizeHttpRequest(user string, password string, requestUrl string) {
