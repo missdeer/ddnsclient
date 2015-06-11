@@ -121,24 +121,25 @@ func getCurrentExternalIP() (string, error) {
 	return "", errors.New("invalid IP address")
 }
 
-func basicAuthorizeHttpRequest(user string, password string, requestUrl string) {
+func basicAuthorizeHttpRequest(user string, password string, requestUrl string) error {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", requestUrl, nil)
 	req.SetBasicAuth(user, password)
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Printf("request %s failed\n", requestUrl)
-		return
+		return err
 	}
 	defer resp.Body.Close()
 	_, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Printf("reading response failed\n")
-		return
+		return err
 	}
+	return nil
 }
 
-func cloudflareRequest(user string, token string, domain string, sub_domain string) {
+func cloudflareRequest(user string, token string, domain string, sub_domain string) error {
 	// get domain all records
 	cloudflareAPIUrl := "https://www.cloudflare.com/api_json.html"
 	client := &http.Client{}
@@ -150,20 +151,20 @@ func cloudflareRequest(user string, token string, domain string, sub_domain stri
 	})
 	if err != nil {
 		fmt.Printf("request cloudflare all records failed\n")
-		return
+		return err
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Printf("reading cloudflare all records failed\n")
-		return
+		return err
 	}
 
 	recordList := new(CloudflareRecordList)
 	if err = json.Unmarshal(body, &recordList); err != nil {
 		fmt.Printf("unmarshalling cloudflare all records %s failed\n", string(body))
-		return
+		return err
 	}
 
 	// insert or update
@@ -190,7 +191,7 @@ func cloudflareRequest(user string, token string, domain string, sub_domain stri
 		})
 		if err != nil {
 			fmt.Printf("request cloudflare new record failed\n")
-			return
+			return err
 		}
 
 		defer resp.Body.Close()
@@ -198,13 +199,13 @@ func cloudflareRequest(user string, token string, domain string, sub_domain stri
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			fmt.Printf("reading cloudflare new record failed\n")
-			return
+			return err
 		}
 		// extract the new record id
 		respBody := new(CloudflareNewRecordResponseBody)
 		if err = json.Unmarshal(body, respBody); err != nil {
 			fmt.Printf("unmarshalling cloudflare new record response body failed\n")
-			return
+			return err
 		}
 		recordId = respBody.Response.Rec.Obj.Id
 		fmt.Printf("A record inserted into cloudflare: %s.%s => %s\n", sub_domain, domain, currentExternalIP)
@@ -224,19 +225,20 @@ func cloudflareRequest(user string, token string, domain string, sub_domain stri
 	})
 	if err != nil {
 		fmt.Printf("request cloudflare records edit failed\n")
-		return
+		return err
 	}
 	defer resp.Body.Close()
 
 	body, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Printf("reading cloudflare record edit response failed\n")
-		return
+		return err
 	}
 	fmt.Printf("A record updated to cloudflare: %s.%s => %s\n", sub_domain, domain, currentExternalIP)
+	return nil
 }
 
-func dnspodRequest(user string, password string, domain string, sub_domain string) {
+func dnspodRequest(user string, password string, domain string, sub_domain string) error {
 	needDomainList := false
 	if len(dnspodDomainList.Domains) == 0 {
 		needDomainList = true
@@ -264,19 +266,19 @@ func dnspodRequest(user string, password string, domain string, sub_domain strin
 		})
 		if err != nil {
 			fmt.Printf("request domain list failed\n")
-			return
+			return err
 		}
 		defer resp.Body.Close()
 
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			fmt.Printf("reading domain list failed\n")
-			return
+			return err
 		}
 
 		if err = json.Unmarshal(body, &dnspodDomainList); err != nil {
 			fmt.Printf("unmarshalling domain list %s failed\n", string(body))
-			return
+			return err
 		}
 	}
 	foundDomain := false
@@ -290,7 +292,7 @@ func dnspodRequest(user string, password string, domain string, sub_domain strin
 
 	if foundDomain == false {
 		fmt.Printf("domain %s doesn't exists\n", domain)
-		return
+		return errors.New("domain not found")
 	}
 
 	// check record list
@@ -303,21 +305,21 @@ func dnspodRequest(user string, password string, domain string, sub_domain strin
 	})
 	if err != nil {
 		fmt.Printf("request record list failed\n")
-		return
+		return err
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Printf("reading record list failed\n")
-		return
+		return err
 	}
 
 	recordList := new(DnspodRecordList)
 	if err = json.Unmarshal(body, recordList); err != nil {
 		fmt.Printf("unmarshalling record list %s failed\n", string(body))
 		fmt.Println(err)
-		return
+		return err
 	}
 	foundRecord := false
 	var recordId string
@@ -344,13 +346,13 @@ func dnspodRequest(user string, password string, domain string, sub_domain strin
 		})
 		if err != nil {
 			fmt.Printf("request record insert failed\n")
-			return
+			return err
 		}
 		defer resp.Body.Close()
 
 		if _, err = ioutil.ReadAll(resp.Body); err != nil {
 			fmt.Printf("reading record insert response failed\n")
-			return
+			return err
 		}
 
 		fmt.Printf("A record inserted into DNSPOD: %s.%s => %s\n", sub_domain, domain, currentExternalIP)
@@ -370,16 +372,18 @@ func dnspodRequest(user string, password string, domain string, sub_domain strin
 		})
 		if err != nil {
 			fmt.Printf("request record modify failed\n")
-			return
+			return err
 		}
 		defer resp.Body.Close()
 
 		if _, err = ioutil.ReadAll(resp.Body); err != nil {
 			fmt.Printf("reading record modify response failed\n")
-			return
+			return err
 		}
 		fmt.Printf("A record updated to DNSPOD: %s.%s => %s\n", sub_domain, domain, currentExternalIP)
 	}
+
+	return nil
 }
 
 func updateDDNS(setting *Setting) {
@@ -391,16 +395,28 @@ func updateDDNS(setting *Setting) {
 	}
 	if len(currentExternalIP) != 0 && lastExternalIP != currentExternalIP {
 		for _, v := range setting.BasicAuthItems {
-			basicAuthorizeHttpRequest(v.UserName, v.Password, v.Url)
+		start_basicauth:
+			if err = basicAuthorizeHttpRequest(v.UserName, v.Password, v.Url); err != nil {
+				time.Sleep(5 * time.Second)
+				goto start_basicauth
+			}
 		}
 
 		for _, v := range setting.DnspodItems {
-			dnspodRequest(v.UserName, v.Password, v.Domain, v.SubDomain)
+		start_dnspod:
+			if err = dnspodRequest(v.UserName, v.Password, v.Domain, v.SubDomain); err != nil {
+				time.Sleep(5 * time.Second)
+				goto start_dnspod
+			}
 		}
 		lastExternalIP = currentExternalIP
 
 		for _, v := range setting.CloudflareItems {
-			cloudflareRequest(v.UserName, v.Token, v.Domain, v.SubDomain)
+		start_cloudflare:
+			if err = cloudflareRequest(v.UserName, v.Token, v.Domain, v.SubDomain); err != nil {
+				time.Sleep(5 * time.Second)
+				goto start_cloudflare
+			}
 		}
 	}
 }
