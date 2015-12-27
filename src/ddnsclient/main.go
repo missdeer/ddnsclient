@@ -95,7 +95,7 @@ var (
 
 func getCurrentExternalIP() (string, error) {
 	client := &http.Client{}
-	ifconfigUrl := "https://ifconfig.minidump.info"
+	ifconfigUrl := "https://if.yii.li"
 	req, err := http.NewRequest("GET", ifconfigUrl, nil)
 	req.Header.Set("User-Agent", "curl/7.41.0")
 	resp, err := client.Do(req)
