@@ -339,7 +339,7 @@ func cloudflareRequest(user string, token string, domain string, sub_domain stri
 			return err
 		}
 		recordId = respBody.Response.Rec.Obj.Id
-		fmt.Printf("A record inserted into cloudflare: %s.%s => %s\n", sub_domain, domain, currentExternalIP)
+		fmt.Printf("[%v] A record inserted into cloudflare: %s.%s => %s\n", time.Now(), sub_domain, domain, currentExternalIP)
 	}
 	// update the record
 	resp, err = client.PostForm(cloudflareAPIUrl, url.Values{
@@ -365,7 +365,7 @@ func cloudflareRequest(user string, token string, domain string, sub_domain stri
 		fmt.Printf("reading cloudflare record edit response failed\n")
 		return err
 	}
-	fmt.Printf("A record updated to cloudflare: %s.%s => %s\n", sub_domain, domain, currentExternalIP)
+	fmt.Printf("[%v] A record updated to cloudflare: %s.%s => %s\n", time.Now(), sub_domain, domain, currentExternalIP)
 	return nil
 }
 
@@ -486,7 +486,7 @@ func dnspodRequest(user string, password string, domain string, sub_domain strin
 			return err
 		}
 
-		fmt.Printf("A record inserted into DNSPOD: %s.%s => %s\n", sub_domain, domain, currentExternalIP)
+		fmt.Printf("[%v] A record inserted into DNSPOD: %s.%s => %s\n", time.Now(), sub_domain, domain, currentExternalIP)
 	} else {
 		// otherwise just update it
 		modifyRecordUrl := "https://dnsapi.cn/Record.Modify"
@@ -511,7 +511,7 @@ func dnspodRequest(user string, password string, domain string, sub_domain strin
 			fmt.Printf("reading record modify response failed\n")
 			return err
 		}
-		fmt.Printf("A record updated to DNSPOD: %s.%s => %s\n", sub_domain, domain, currentExternalIP)
+		fmt.Printf("[%v] A record updated to DNSPOD: %s.%s => %s\n", time.Now(), sub_domain, domain, currentExternalIP)
 	}
 
 	return nil
@@ -526,27 +526,39 @@ func updateDDNS(setting *Setting) {
 	}
 	if len(currentExternalIP) != 0 && lastExternalIP != currentExternalIP {
 		for _, v := range setting.BasicAuthItems {
+			retried := false
 		start_basicauth:
 			if err = basicAuthorizeHttpRequest(v.UserName, v.Password, v.Url); err != nil {
 				time.Sleep(5 * time.Second)
-				goto start_basicauth
+				if !retried {
+					retried = true
+					goto start_basicauth
+				}
 			}
 		}
 
 		for _, v := range setting.DnspodItems {
+			retried := false
 		start_dnspod:
 			if err = dnspodRequest(v.UserName, v.Password, v.Domain, v.SubDomain); err != nil {
 				time.Sleep(5 * time.Second)
-				goto start_dnspod
+				if !retried {
+					retried = true
+					goto start_dnspod
+				}
 			}
 		}
 		lastExternalIP = currentExternalIP
 
 		for _, v := range setting.CloudflareItems {
+			retried := false
 		start_cloudflare:
 			if err = cloudflareRequest(v.UserName, v.Token, v.Domain, v.SubDomain); err != nil {
 				time.Sleep(5 * time.Second)
-				goto start_cloudflare
+				if !retried {
+					retried = true
+					goto start_cloudflare
+				}
 			}
 		}
 	}
@@ -578,7 +590,7 @@ func main() {
 	}
 
 	go updateDDNS(setting)
-	timer := time.NewTicker(time.Duration(1) * time.Minute) // every 1 minute
+	timer := time.NewTicker(1 * time.Minute) // every 1 minute
 	for {
 		select {
 		case <-timer.C:
