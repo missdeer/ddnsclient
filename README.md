@@ -4,5 +4,6 @@ update ddns A record
 Support:
 
 - basic http authorization services, such as pubyum.com, oray.com and so on
-- dnspod.cn
-- cloudflare.com
+- [DNSPod](https://dnspod.cn)
+- [CloudFlare](https://www.cloudflare.com)
+- [CloudXNS](https://www.cloudxns.net)
