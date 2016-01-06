@@ -69,18 +69,18 @@ type CloudXNSDomainList struct {
 	Data    []CloudXNSDomainItem `json:"data"`
 }
 
-type CloudXNSRecordItem struct {
+type CloudXNSHostRecordItem struct {
 	Id         int    `json:"id,string"`
 	Host       string `json:"host"`
 	RecordNum  int    `json:"record_num,string"`
 	DomainName string `json:"domain_name"`
 }
 
-type CloudXNSRecordList struct {
-	Code    string               `json:"code"`
-	Message string               `json:"message"`
-	Total   string               `json:"total"`
-	Data    []CloudXNSRecordItem `json:"data"`
+type CloudXNSHostRecordList struct {
+	Code    string                   `json:"code"`
+	Message string                   `json:"message"`
+	Total   string                   `json:"total"`
+	Data    []CloudXNSHostRecordItem `json:"data"`
 }
 
 type CloudXNSResolveItem struct {
@@ -205,10 +205,99 @@ func basicAuthorizeHttpRequest(user string, password string, requestUrl string) 
 	return nil
 }
 
-func cloudxnsRequest(apiKey string, secretKey string, domain string, sub_domain string) error {
+func cloudxnsFindDomain(apiKey string, secretKey string, domain string) int {
 	client := &http.Client{}
-	// get domain all records
+	// get domain list
 	cloudxnsAPIUrl := "https://www.cloudxns.net/api2/domain"
+	req, err := http.NewRequest("GET", cloudxnsAPIUrl, nil)
+	req.Header.Set("API-KEY", apiKey)
+	apiRequestDate := time.Now().String()
+	req.Header.Add("API-REQUEST-DATE", apiRequestDate)
+	sum := md5.Sum([]byte(apiKey + cloudxnsAPIUrl + apiRequestDate + secretKey))
+	req.Header.Add("API-HMAC", hex.EncodeToString(sum[:]))
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Getting CloudXNS domain list failed", err)
+		return -1
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("reading cloudflare all records failed\n")
+		return -1
+	}
+
+	recordList := new(CloudXNSDomainList)
+	if err = json.Unmarshal(body, &recordList); err != nil {
+		fmt.Printf("unmarshalling CloudXNS all records %s failed\n", string(body))
+		return -1
+	}
+
+	for _, v := range recordList.Data {
+		if v.Domain == domain {
+			return v.Id
+		}
+	}
+	return -1
+}
+
+func cloudxnsFindHostRecord(apiKey string, secretKey string, domainId int, sub_domain string) int {
+	client := &http.Client{}
+	// get host record list
+	cloudxnsAPIUrl := fmt.Sprintf("https://www.cloudxns.net/api2/host/%d?offset=0&row_num=2000", domainId)
+	req, err := http.NewRequest("GET", cloudxnsAPIUrl, nil)
+	req.Header.Set("API-KEY", apiKey)
+	apiRequestDate := time.Now().String()
+	req.Header.Add("API-REQUEST-DATE", apiRequestDate)
+	sum := md5.Sum([]byte(apiKey + cloudxnsAPIUrl + apiRequestDate + secretKey))
+	req.Header.Add("API-HMAC", hex.EncodeToString(sum[:]))
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Getting CloudXNS host record list failed", err)
+		return -1
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("reading CloudXNS all host records failed\n")
+		return -1
+	}
+
+	recordList := new(CloudXNSHostRecordList)
+	if err = json.Unmarshal(body, &recordList); err != nil {
+		fmt.Printf("unmarshalling CloudXNS all records %s failed\n", string(body))
+		return -1
+	}
+
+	for _, v := range recordList.Data {
+		if v.Host == sub_domain {
+			return v.Id
+		}
+	}
+
+	return -1
+}
+
+func cloudxnsRequest(apiKey string, secretKey string, domain string, sub_domain string) error {
+	// find the domain
+	domainId := cloudxnsFindDomain(apiKey, secretKey, domain)
+	if domainId == -1 {
+		fmt.Println("can't find domain in list", domain)
+		return errors.New("domain not exists")
+	}
+	// find the host
+	hostRecordId := cloudxnsFindHostRecord(apiKey, secretKey, domainId, sub_domain)
+	if hostRecordId == -1 {
+		fmt.Println("can't find host record in list", sub_domain)
+		return errors.New("host record not exists")
+	}
+	// find the resolve record
+	client := &http.Client{}
+
+	// get domain list
+	cloudxnsAPIUrl := fmt.Sprintf("https://www.cloudxns.net/api2/record/%d?host_id=%d&offset=0&row_num=2000", domainId, hostRecordId)
 	req, err := http.NewRequest("GET", cloudxnsAPIUrl, nil)
 	req.Header.Set("API-KEY", "")
 	apiRequestDate := time.Now().String()
@@ -228,7 +317,7 @@ func cloudxnsRequest(apiKey string, secretKey string, domain string, sub_domain 
 		return err
 	}
 
-	recordList := new(CloudXNSDomainList)
+	recordList := new(CloudXNSResolveList)
 	if err = json.Unmarshal(body, &recordList); err != nil {
 		fmt.Printf("unmarshalling CloudXNS all records %s failed\n", string(body))
 		return err
@@ -237,36 +326,58 @@ func cloudxnsRequest(apiKey string, secretKey string, domain string, sub_domain 
 	// insert or update
 	foundRecord := false
 	var recordId int
-	for _, v := range recordList.Data {
-		if v.Domain == sub_domain {
-			recordId = v.Id
-			foundRecord = true
-			break
-		}
+	var lineId int
+	if len(recordList.Data) > 0 {
+		foundRecord = true
+		recordId = recordList.Data[0].RecordId
+		lineId = recordList.Data[0].LineId
 	}
 
 	if foundRecord {
 		// update
-	} else {
-		// insert
 		postValues := url.Values{
-			"domain":    {fmt.Sprintf("%d", domain)},
-			"record_id": {fmt.Sprintf("%d", recordId)},
+			"domain_id": {fmt.Sprintf("%d", domainId)},
+			"host":      {sub_domain},
+			"value":     {currentExternalIP},
 		}
-		cloudxnsAPIUrl := "https://www.cloudxns.net/api2/domain"
-		req, err := http.NewRequest("POST", cloudxnsAPIUrl, strings.NewReader(postValues.Encode()))
-		req.Header.Set("API-KEY", "")
+		cloudxnsAPIUrl := fmt.Sprintf("https://www.cloudxns.net/api2/record/%d", recordId)
+
+		req, err := http.NewRequest("PUT", cloudxnsAPIUrl, strings.NewReader(postValues.Encode()))
+		req.Header.Set("API-KEY", apiKey)
 		apiRequestDate := time.Now().String()
 		req.Header.Add("API-REQUEST-DATE", apiRequestDate)
 		sum := md5.Sum([]byte(apiKey + cloudxnsAPIUrl + postValues.Encode() + apiRequestDate + secretKey))
 		req.Header.Add("API-HMAC", hex.EncodeToString(sum[:]))
 		resp, err := client.Do(req)
 		if err != nil {
-			fmt.Println("Getting CloudXNS domain list failed", err)
+			fmt.Printf("[%v] Updating CloudXNS resolve item failed", time.Now(), err)
+			return err
+		}
+		defer resp.Body.Close()
+	} else {
+		// insert
+		postValues := url.Values{
+			"domain_id": {fmt.Sprintf("%d", domainId)},
+			"host":      {sub_domain},
+			"value":     {currentExternalIP},
+			"type":      {"A"},
+			"line_id":   {fmt.Sprintf("%d", lineId)},
+		}
+		cloudxnsAPIUrl := "https://www.cloudxns.net/api2/record"
+		req, err := http.NewRequest("POST", cloudxnsAPIUrl, strings.NewReader(postValues.Encode()))
+		req.Header.Set("API-KEY", apiKey)
+		apiRequestDate := time.Now().String()
+		req.Header.Add("API-REQUEST-DATE", apiRequestDate)
+		sum := md5.Sum([]byte(apiKey + cloudxnsAPIUrl + postValues.Encode() + apiRequestDate + secretKey))
+		req.Header.Add("API-HMAC", hex.EncodeToString(sum[:]))
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Printf("[%v] inserting CloudXNS resolve item failed", time.Now(), err)
 			return err
 		}
 		defer resp.Body.Close()
 	}
+	fmt.Printf("A record updated to cloudXNS: %s.%s => %s\n", sub_domain, domain, currentExternalIP)
 	return nil
 }
 
@@ -540,7 +651,6 @@ func updateDDNS(setting *Setting) {
 				goto start_dnspod
 			}
 		}
-		lastExternalIP = currentExternalIP
 
 		for _, v := range setting.CloudflareItems {
 		start_cloudflare:
@@ -549,6 +659,15 @@ func updateDDNS(setting *Setting) {
 				goto start_cloudflare
 			}
 		}
+
+		for _, v := range setting.CloudXNSItems {
+		start_cloudxns:
+			if err = cloudxnsRequest(v.APIKey, v.SecretKey, v.Domain, v.SubDomain); err != nil {
+				time.Sleep(5 * time.Second)
+				goto start_cloudxns
+			}
+		}
+		lastExternalIP = currentExternalIP
 	}
 }
 
