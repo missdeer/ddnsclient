@@ -26,5 +26,13 @@
       "domain": "domain.com",
       "sub_domain": "subdomain"
     }
+  ],
+  "cloudxns": [
+    {
+      "apikey": "xxxxxxxxxx",
+      "secretkey": "yyyyyyyyyy",
+      "domain": "domain.com",
+      "sub_domain": "subdomain"
+    }
   ]
 }
