@@ -13,3 +13,9 @@ Install:
 ```bash
 go get github.com/missdeer/ddnsclient
 ```
+
+Usage:
+----
+- rename app.conf.sample to app.conf
+- modify app.conf as you like
+- run command: `./ddnsclient`
