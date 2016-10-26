@@ -516,7 +516,7 @@ func updateDDNS(setting *Setting) {
 		return
 	}
 
-	basicAuth := func(v BasicAuthConfigurationItem) {
+	basicAuth := func(v models.BasicAuthConfigurationItem) {
 		for {
 			if err := basicAuthorizeHttpRequest(v.UserName, v.Password, v.Url); err == nil {
 				break
@@ -525,7 +525,7 @@ func updateDDNS(setting *Setting) {
 		}
 	}
 
-	dnspod := func(v DnspodConfigurationItem) {
+	dnspod := func(v models.DnspodConfigurationItem) {
 		for {
 			if err := dnspodRequest(v.UserName, v.Password, v.Domain, v.SubDomain); err == nil {
 				break
@@ -534,7 +534,7 @@ func updateDDNS(setting *Setting) {
 		}
 	}
 
-	cloudflare := func(v CloudflareConfigurationItem) {
+	cloudflare := func(v models.CloudflareConfigurationItem) {
 		for {
 			if err := cloudflareRequest(v.UserName, v.Token, v.Domain, v.SubDomain); err == nil {
 				break
@@ -543,7 +543,7 @@ func updateDDNS(setting *Setting) {
 		}
 	}
 
-	cloudxns := func(v CloudXNSConfigurationItem) {
+	cloudxns := func(v models.CloudXNSConfigurationItem) {
 		for {
 			if err := cloudxnsRequest(v.APIKey, v.SecretKey, v.Domain, v.SubDomain); err == nil {
 				break
