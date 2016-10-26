@@ -1,0 +1,38 @@
+{
+  "basic": [
+    {
+      "username": "xxxx",
+      "password": "ppaassss",
+      "url": "http://ddns.oray.com/ph/update?hostname=xxxx.vicp.net"
+    },
+    {
+      "username": "xxxx",
+      "password": "ppaassss",
+      "url": "http://members.3322.net/dyndns/update?system=dyndns&hostname=xxxx.f3322.net"
+    }
+  ],
+  "dnspod": [
+    {
+      "username": "xxxx",
+      "password": "ppaassss",
+      "domain": "domain.com",
+      "sub_domain": "subdomain"
+    }
+  ],
+  "cloudflare": [
+    {
+      "username": "xxxx@domain.com",
+      "token": "ppaassss",
+      "domain": "domain.com",
+      "sub_domain": "subdomain"
+    }
+  ],
+  "cloudxns": [
+    {
+      "apikey": "xxxxxxxxxx",
+      "secretkey": "yyyyyyyyyy",
+      "domain": "domain.com",
+      "sub_domain": "subdomain"
+    }
+  ]
+}
