@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"models"
 	"net/http"
 	"net/url"
 	"os"
@@ -16,147 +17,17 @@ import (
 	"time"
 )
 
-type BasicAuthConfigurationItem struct {
-	UserName string `json:"username"`
-	Password string `json:"password"`
-	Url      string `json:"url"`
-}
-
-type DnspodConfigurationItem struct {
-	UserName  string `json:"username"`
-	Password  string `json:"password"`
-	Domain    string `json:"domain"`
-	SubDomain string `json:"sub_domain"`
-}
-
-type CloudflareConfigurationItem struct {
-	UserName  string `json:"username"`
-	Token     string `json:"token"`
-	Domain    string `json:"domain"`
-	SubDomain string `json:"sub_domain"`
-}
-
-type CloudXNSConfigurationItem struct {
-	APIKey    string `json:"apikey"`
-	SecretKey string `json:"secretkey"`
-	Domain    string `json:"domain"`
-	SubDomain string `json:"sub_domain"`
-}
-
 type Setting struct {
-	BasicAuthItems  []BasicAuthConfigurationItem  `json:"basic"`
-	DnspodItems     []DnspodConfigurationItem     `json:"dnspod"`
-	CloudflareItems []CloudflareConfigurationItem `json:"cloudflare"`
-	CloudXNSItems   []CloudXNSConfigurationItem   `json:"cloudxns"`
-}
-
-type CloudXNSDomainItem struct {
-	Id             int    `json:"id,string"`
-	Domain         string `json:"domain"`
-	Status         string `json:"status"`
-	AuditStatus    string `json:"audit_status"`
-	TakeOverStatus string `json:"take_over_status"`
-	Level          int    `json:"level,string"`
-	CreateTime     string `json:"create_time"`
-	UpdateTime     string `json:"update_time"`
-	TTL            int    `json:"ttl,string"`
-}
-
-type CloudXNSDomainList struct {
-	Code    int                  `json:"code"`
-	Message string               `json:"message"`
-	Total   int                  `json:"total,string"`
-	Data    []CloudXNSDomainItem `json:"data"`
-}
-
-type CloudXNSHostRecordItem struct {
-	Id         int    `json:"id,string"`
-	Host       string `json:"host"`
-	RecordNum  int    `json:"record_num,string"`
-	DomainName string `json:"domain_name"`
-}
-
-type CloudXNSHostRecordList struct {
-	Code    int                      `json:"code"`
-	Message string                   `json:"message"`
-	Total   int                      `json:"total,string"`
-	Data    []CloudXNSHostRecordItem `json:"hosts"`
-}
-
-type CloudXNSResolveItem struct {
-	RecordId   int         `json:"record_id,string"`
-	HostId     int         `json:"host_id,string"`
-	Host       string      `json:"host"`
-	LineZh     string      `json:"line_zh"`
-	LineEn     string      `json:"line_en"`
-	LineId     int         `json:"line_id,string"`
-	MX         interface{} `json:"mx"`
-	Value      string      `json:"value"`
-	Type       string      `json:"type"`
-	Status     string      `json:"status"`
-	CreateTime string      `json:"create_time"`
-	UpdateTime string      `json:"update_time"`
-}
-
-type CloudXNSResolveList struct {
-	Code    int                   `json:"code"`
-	Message string                `json:"message"`
-	Total   int                   `json:"total"`
-	Data    []CloudXNSResolveItem `json:"data"`
-}
-
-type DnspodDomainItem struct {
-	Id   int    `json:"id"`
-	Name string `json:"name"`
-}
-
-type DnspodDomainList struct {
-	Domains []DnspodDomainItem `json:"domains"`
-}
-
-type DnspodRecordItem struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
-}
-
-type DnspodRecordList struct {
-	Records []DnspodRecordItem `json:"records"`
-}
-
-type CloudflareRecordItem struct {
-	Id          string `json:"rec_id"`
-	DisplayName string `json:"display_name"`
-	Type        string `json:"type"`
-}
-
-type CloudflareRecords struct {
-	Objs []CloudflareRecordItem `json:"objs"`
-}
-
-type CloudflareResponse struct {
-	Recs CloudflareRecords `json:"recs"`
-}
-
-type CloudflareRecordList struct {
-	Response CloudflareResponse `json:"response"`
-}
-
-type CloudflareNewRecords struct {
-	Obj CloudflareRecordItem `json:"obj"`
-}
-
-type CloudflareNewRecordResponse struct {
-	Rec CloudflareNewRecords `json:"rec"`
-}
-
-type CloudflareNewRecordResponseBody struct {
-	Response CloudflareNewRecordResponse `json:"response"`
+	BasicAuthItems  []models.BasicAuthConfigurationItem  `json:"basic"`
+	DnspodItems     []models.DnspodConfigurationItem     `json:"dnspod"`
+	CloudflareItems []models.CloudflareConfigurationItem `json:"cloudflare"`
+	CloudXNSItems   []models.CloudXNSConfigurationItem   `json:"cloudxns"`
 }
 
 var (
 	currentExternalIP string
 	lastExternalIP    string
-	dnspodDomainList  = &DnspodDomainList{}
+	dnspodDomainList  = &models.DnspodDomainList{}
 )
 
 func getCurrentExternalIP() (string, error) {
@@ -228,7 +99,7 @@ func cloudxnsFindDomain(apiKey string, secretKey string, domain string) int {
 		return -1
 	}
 
-	recordList := new(CloudXNSDomainList)
+	recordList := new(models.CloudXNSDomainList)
 	if err = json.Unmarshal(body, &recordList); err != nil {
 		fmt.Printf("unmarshalling CloudXNS all domain list %s failed: %v\n", string(body), err)
 		return -1
@@ -266,7 +137,7 @@ func cloudxnsFindHostRecord(apiKey string, secretKey string, domainId int, sub_d
 		return -1
 	}
 
-	recordList := new(CloudXNSHostRecordList)
+	recordList := new(models.CloudXNSHostRecordList)
 	if err = json.Unmarshal(body, &recordList); err != nil {
 		fmt.Printf("unmarshalling CloudXNS all records %s failed\n", string(body))
 		return -1
@@ -318,7 +189,7 @@ func cloudxnsRequest(apiKey string, secretKey string, domain string, sub_domain 
 		return err
 	}
 
-	recordList := new(CloudXNSResolveList)
+	recordList := new(models.CloudXNSResolveList)
 	if err = json.Unmarshal(body, &recordList); err != nil {
 		fmt.Printf("unmarshalling CloudXNS all resolve records %s failed: %v\n", string(body), err)
 		return err
@@ -412,7 +283,7 @@ func cloudflareRequest(user string, token string, domain string, sub_domain stri
 		return err
 	}
 
-	recordList := new(CloudflareRecordList)
+	recordList := new(models.CloudflareRecordList)
 	if err = json.Unmarshal(body, &recordList); err != nil {
 		fmt.Printf("unmarshalling cloudflare all records %s failed\n", string(body))
 		return err
@@ -453,7 +324,7 @@ func cloudflareRequest(user string, token string, domain string, sub_domain stri
 			return err
 		}
 		// extract the new record id
-		respBody := new(CloudflareNewRecordResponseBody)
+		respBody := new(models.CloudflareNewRecordResponseBody)
 		if err = json.Unmarshal(body, respBody); err != nil {
 			fmt.Printf("unmarshalling cloudflare new record response body failed\n")
 			return err
@@ -566,7 +437,7 @@ func dnspodRequest(user string, password string, domain string, sub_domain strin
 		return err
 	}
 
-	recordList := new(DnspodRecordList)
+	recordList := new(models.DnspodRecordList)
 	if err = json.Unmarshal(body, recordList); err != nil {
 		fmt.Printf("unmarshalling record list %s failed\n", string(body))
 		fmt.Println(err)
