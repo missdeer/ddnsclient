@@ -8,13 +8,14 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"models"
 	"net/http"
 	"net/url"
 	"os"
 	"regexp"
 	"strconv"
 	"time"
+
+	"github.com/missdeer/ddnsclient/models"
 )
 
 type Setting struct {

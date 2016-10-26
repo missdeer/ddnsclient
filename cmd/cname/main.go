@@ -5,11 +5,12 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"models"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/missdeer/ddnsclient/models"
 )
 
 var (
