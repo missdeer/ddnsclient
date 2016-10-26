@@ -11,7 +11,7 @@ Support:
 Install:
 ----
 ```bash
-go get github.com/missdeer/ddnsclient
+go get github.com/missdeer/ddnsclient/cmd/ddnsclient
 ```
 
 Usage:
