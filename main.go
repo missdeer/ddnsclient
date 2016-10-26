@@ -444,19 +444,19 @@ func dnspodRequest(user string, password string, domain string, sub_domain strin
 		return err
 	}
 	foundRecord := false
-	var recordId string
+	var recordID string
 	for _, v := range recordList.Records {
 		if v.Name == sub_domain {
 			foundRecord = true
-			recordId = v.Id
+			recordID = v.Id
 			break
 		}
 	}
 
 	if foundRecord == false {
 		// if the sub domain doesn't exist, add one
-		addRecordUrl := "https://dnsapi.cn/Record.Create"
-		resp, err := client.PostForm(addRecordUrl, url.Values{
+		addRecordURL := "https://dnsapi.cn/Record.Create"
+		resp, err := client.PostForm(addRecordURL, url.Values{
 			"login_email":    {user},
 			"login_password": {password},
 			"format":         {"json"},
@@ -480,12 +480,12 @@ func dnspodRequest(user string, password string, domain string, sub_domain strin
 		fmt.Printf("[%v] A record inserted into DNSPOD: %s.%s => %s\n", time.Now(), sub_domain, domain, currentExternalIP)
 	} else {
 		// otherwise just update it
-		modifyRecordUrl := "https://dnsapi.cn/Record.Modify"
-		resp, err := client.PostForm(modifyRecordUrl, url.Values{
+		modifyRecordURL := "https://dnsapi.cn/Record.Modify"
+		resp, err := client.PostForm(modifyRecordURL, url.Values{
 			"login_email":    {user},
 			"login_password": {password},
 			"format":         {"json"},
-			"record_id":      {recordId},
+			"record_id":      {recordID},
 			"domain_id":      {strconv.Itoa(domainId)},
 			"sub_domain":     {sub_domain},
 			"record_type":    {"A"},
@@ -515,53 +515,57 @@ func updateDDNS(setting *Setting) {
 		fmt.Println(err)
 		return
 	}
+
+	basicAuth := func(v BasicAuthConfigurationItem) {
+		for {
+			if err := basicAuthorizeHttpRequest(v.UserName, v.Password, v.Url); err == nil {
+				break
+			}
+			time.Sleep(1 * time.Minute)
+		}
+	}
+
+	dnspod := func(v DnspodConfigurationItem) {
+		for {
+			if err := dnspodRequest(v.UserName, v.Password, v.Domain, v.SubDomain); err == nil {
+				break
+			}
+			time.Sleep(1 * time.Minute)
+		}
+	}
+
+	cloudflare := func(v CloudflareConfigurationItem) {
+		for {
+			if err := cloudflareRequest(v.UserName, v.Token, v.Domain, v.SubDomain); err == nil {
+				break
+			}
+			time.Sleep(1 * time.Minute)
+		}
+	}
+
+	cloudxns := func(v CloudXNSConfigurationItem) {
+		for {
+			if err := cloudxnsRequest(v.APIKey, v.SecretKey, v.Domain, v.SubDomain); err == nil {
+				break
+			}
+			time.Sleep(1 * time.Minute)
+		}
+	}
 	if len(currentExternalIP) != 0 && lastExternalIP != currentExternalIP {
 		for _, v := range setting.BasicAuthItems {
-			retried := false
-		start_basicauth:
-			if err = basicAuthorizeHttpRequest(v.UserName, v.Password, v.Url); err != nil {
-				time.Sleep(5 * time.Second)
-				if !retried {
-					retried = true
-					goto start_basicauth
-				}
-			}
+			go basicAuth(v)
 		}
 
 		for _, v := range setting.DnspodItems {
-			retried := false
-		start_dnspod:
-			if err = dnspodRequest(v.UserName, v.Password, v.Domain, v.SubDomain); err != nil {
-				time.Sleep(5 * time.Second)
-				if !retried {
-					retried = true
-					goto start_dnspod
-				}
-			}
+			go dnspod(v)
 		}
 
 		for _, v := range setting.CloudflareItems {
-			retried := false
-		start_cloudflare:
-			if err = cloudflareRequest(v.UserName, v.Token, v.Domain, v.SubDomain); err != nil {
-				time.Sleep(5 * time.Second)
-				if !retried {
-					retried = true
-					goto start_cloudflare
-				}
-			}
+			go cloudflare(v)
 		}
 
 		for _, v := range setting.CloudXNSItems {
-			retried := false
-		start_cloudxns:
-			if err = cloudxnsRequest(v.APIKey, v.SecretKey, v.Domain, v.SubDomain); err != nil {
-				time.Sleep(5 * time.Second)
-				if !retried {
-					retried = true
-					goto start_cloudxns
-				}
-			}
+			go cloudxns(v)
 		}
 		lastExternalIP = currentExternalIP
 	}
@@ -600,5 +604,4 @@ func main() {
 			go updateDDNS(setting)
 		}
 	}
-	timer.Stop()
 }
