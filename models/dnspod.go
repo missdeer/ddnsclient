@@ -3,6 +3,8 @@ package models
 type DnspodConfigurationItem struct {
 	TokenId   string `json:"id"`
 	Token     string `json:"token"`
+	UserName  string `json:"username"`
+	Password  string `json:"password"`
 	Domain    string `json:"domain"`
 	SubDomain string `json:"sub_domain"`
 }

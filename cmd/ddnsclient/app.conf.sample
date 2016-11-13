@@ -17,6 +17,12 @@
       "token": "ppaassss",
       "domain": "domain.com",
       "sub_domain": "subdomain"
+    },
+    {
+      "username": "xxxx",
+      "password": "ppaassss",
+      "domain": "domain.com",
+      "sub_domain": "subdomain"
     }
   ],
   "cloudflare": [
