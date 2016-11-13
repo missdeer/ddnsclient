@@ -16,7 +16,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/chennqqi/ddnsclient/models"
+	"github.com/missdeer/ddnsclient/models"
 )
 
 type Setting struct {
