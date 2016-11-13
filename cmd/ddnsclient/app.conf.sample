@@ -13,8 +13,8 @@
   ],
   "dnspod": [
     {
-      "username": "xxxx",
-      "password": "ppaassss",
+      "id": "xxxx",
+      "token": "ppaassss",
       "domain": "domain.com",
       "sub_domain": "subdomain"
     }
