@@ -362,7 +362,7 @@ func cloudflareRequest(user string, token string, domain string, sub_domain stri
 	return nil
 }
 
-func dnspodRequest(user string, password string, domain string, sub_domain string) error {
+func dnspodRequest(id string, token string, domain string, sub_domain string) error {
 	needDomainList := false
 	if len(dnspodDomainList.Domains) == 0 {
 		needDomainList = true
@@ -384,9 +384,8 @@ func dnspodRequest(user string, password string, domain string, sub_domain strin
 		// get domainn id first
 		domainListUrl := "https://dnsapi.cn/Domain.List"
 		resp, err := client.PostForm(domainListUrl, url.Values{
-			"login_email":    {user},
-			"login_password": {password},
-			"format":         {"json"},
+			"login_token": {id + "," + token},
+			"format":      {"json"},
 		})
 		if err != nil {
 			fmt.Printf("request domain list failed\n")
@@ -422,10 +421,9 @@ func dnspodRequest(user string, password string, domain string, sub_domain strin
 	// check record list
 	recordListUrl := "https://dnsapi.cn/Record.List"
 	resp, err := client.PostForm(recordListUrl, url.Values{
-		"login_email":    {user},
-		"login_password": {password},
-		"format":         {"json"},
-		"domain_id":      {strconv.Itoa(domainId)},
+		"login_token": {id + "," + token},
+		"format":      {"json"},
+		"domain_id":   {strconv.Itoa(domainId)},
 	})
 	if err != nil {
 		fmt.Printf("request record list failed\n")
@@ -459,14 +457,13 @@ func dnspodRequest(user string, password string, domain string, sub_domain strin
 		// if the sub domain doesn't exist, add one
 		addRecordURL := "https://dnsapi.cn/Record.Create"
 		resp, err := client.PostForm(addRecordURL, url.Values{
-			"login_email":    {user},
-			"login_password": {password},
-			"format":         {"json"},
-			"domain_id":      {strconv.Itoa(domainId)},
-			"sub_domain":     {sub_domain},
-			"record_type":    {"A"},
-			"record_line":    {"默认"},
-			"value":          {currentExternalIP},
+			"login_token": {id + "," + token},
+			"format":      {"json"},
+			"domain_id":   {strconv.Itoa(domainId)},
+			"sub_domain":  {sub_domain},
+			"record_type": {"A"},
+			"record_line": {"默认"},
+			"value":       {currentExternalIP},
 		})
 		if err != nil {
 			fmt.Printf("request record insert failed\n")
@@ -484,15 +481,14 @@ func dnspodRequest(user string, password string, domain string, sub_domain strin
 		// otherwise just update it
 		modifyRecordURL := "https://dnsapi.cn/Record.Modify"
 		resp, err := client.PostForm(modifyRecordURL, url.Values{
-			"login_email":    {user},
-			"login_password": {password},
-			"format":         {"json"},
-			"record_id":      {recordID},
-			"domain_id":      {strconv.Itoa(domainId)},
-			"sub_domain":     {sub_domain},
-			"record_type":    {"A"},
-			"record_line":    {"默认"},
-			"value":          {currentExternalIP},
+			"login_token": {id + "," + token},
+			"format":      {"json"},
+			"record_id":   {recordID},
+			"domain_id":   {strconv.Itoa(domainId)},
+			"sub_domain":  {sub_domain},
+			"record_type": {"A"},
+			"record_line": {"默认"},
+			"value":       {currentExternalIP},
 		})
 		if err != nil {
 			fmt.Printf("request record modify failed\n")
@@ -529,7 +525,7 @@ func updateDDNS(setting *Setting) {
 
 	dnspod := func(v models.DnspodConfigurationItem) {
 		for {
-			if err := dnspodRequest(v.UserName, v.Password, v.Domain, v.SubDomain); err == nil {
+			if err := dnspodRequest(v.TokenId, v.Token, v.Domain, v.SubDomain); err == nil {
 				break
 			}
 			time.Sleep(1 * time.Minute)
