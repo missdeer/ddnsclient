@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -15,7 +16,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/missdeer/ddnsclient/models"
+	"github.com/chennqqi/ddnsclient/models"
 )
 
 type Setting struct {
@@ -572,10 +573,14 @@ func updateDDNS(setting *Setting) {
 	}
 }
 
-func main() {
-	fmt.Println("Dynamic DNS client")
+var conf string
 
-	appConf, err := os.Open("app.conf")
+func main() {
+	flag.Parse()
+	flag.StringVar(&conf, "config", "app.conf", "set application config")
+
+	fmt.Println("Dynamic DNS client")
+	appConf, err := os.Open(conf)
 	if err != nil {
 		fmt.Println("opening app.conf failed:", err)
 		return
