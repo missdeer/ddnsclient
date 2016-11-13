@@ -19,3 +19,4 @@ Usage:
 - rename app.conf.sample to app.conf
 - modify app.conf as you like
 - run command: `./ddnsclient`
+- or specify a special configuration file path on commandline: `./ddnsclient -config /some/special/path/myapp.conf`
