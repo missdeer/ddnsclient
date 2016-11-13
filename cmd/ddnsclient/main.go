@@ -572,8 +572,8 @@ func updateDDNS(setting *Setting) {
 var conf string
 
 func main() {
-	flag.Parse()
 	flag.StringVar(&conf, "config", "app.conf", "set application config")
+	flag.Parse()
 
 	fmt.Println("Dynamic DNS client")
 	appConf, err := os.Open(conf)
