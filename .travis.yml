@@ -1,0 +1,10 @@
+language: go
+go:
+  - 1.7.3
+  - tip
+  
+env:
+  global:
+    - GITHUB_REPO: missdeer/ddnsclient
+    - GIT_NAME: missdeer
+    - GIT_EMAIL: missdeer@dfordsoft.com
