@@ -1,6 +1,8 @@
 # ddnsclient
 update ddns A record
 
+[![Build Status](https://secure.travis-ci.org/missdeer/ddnsclient.png)](https://travis-ci.org/missdeer/ddnsclient)
+
 Support:
 ----
 - basic http authorization services, such as pubyum.com, oray.com and so on
