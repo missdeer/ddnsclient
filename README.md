@@ -1,7 +1,7 @@
 # ddnsclient
 update ddns A record
 
-[![Build Status](https://secure.travis-ci.org/missdeer/ddnsclient.png)](https://travis-ci.org/missdeer/ddnsclient)
+[![Build Status](https://secure.travis-ci.org/dfordsoft/ddnsclient.png)](https://travis-ci.org/dfordsoft/ddnsclient)
 
 Support:
 ----
@@ -13,7 +13,7 @@ Support:
 Install:
 ----
 ```bash
-go get github.com/missdeer/ddnsclient/cmd/ddnsclient
+go get github.com/missdeer/dfordsoft/cmd/ddnsclient
 ```
 
 Usage:
