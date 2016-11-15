@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/missdeer/ddnsclient/models"
+	"github.com/dfordsoft/ddnsclient/models"
 )
 
 var (
