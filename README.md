@@ -22,3 +22,7 @@ Usage:
 - modify app.conf as you like
 - run command: `./ddnsclient`
 - or specify a special configuration file path on commandline: `./ddnsclient -config /some/special/path/myapp.conf`
+
+Attention:
+----
+Currently, ddnsclient util depends on [https://if.yii.li](https://github.com/dfordsoft/ddnsclient/blob/master/cmd/ddnsclient/main.go#L37) service to get the device public internet IP, if you want to setup your own service to archive this goal, please visit [ifconfig project site](https://github.com/dfordsoft/ifconfig) for more information.
