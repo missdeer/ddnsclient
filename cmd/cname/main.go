@@ -127,7 +127,7 @@ func main() {
 	flag.StringVar(&suffix, "suffix", "", "target domain, such as zzz.moe")
 	flag.StringVar(&token, "token", "", "your cloudflare token")
 	flag.StringVar(&user, "user", "", "your cloudflare user account")
-	flag.StringVar(&prefixList, "prefix", "cn,kr,eu,tw,us,sg,jp,ru", "prefix list")
+	flag.StringVar(&prefixList, "prefix", "cn,kr,eu,tw,us,sg,jp,ru,hk", "prefix list")
 	flag.IntVar(&maxCount, "max", 9, "max count")
 	flag.Parse()
 
