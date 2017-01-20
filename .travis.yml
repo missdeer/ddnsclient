@@ -64,7 +64,7 @@ deploy:
     tags: true
 skip_cleanup: true
 install:
-  - go get github.com/dfordsoft/ddnsclient
+  - go get github.com/dfordsoft/ddnsclient/cmd/...
 script:
   - pwd && ls -l && cd cmd/cname
   - env GOPATH=$GOPATH:$PWD/../.. GOARCH=amd64 GOOS=linux go build -ldflags="-s -w"  && tar czvf cname-linux-amd64.tar.gz cname && cp ./*.tar.gz ../
