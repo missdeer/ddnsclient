@@ -1,10 +1,117 @@
 language: go
 go:
-  - 1.7.3
-  - tip
-
+- tip
 env:
   global:
-    - GITHUB_REPO: missdeer/ddnsclient
-    - GIT_NAME: missdeer
-    - GIT_EMAIL: missdeer@dfordsoft.com
+  - GITHUB_REPO: missdeer/ddnsclient
+  - GIT_NAME: missdeer
+  - GIT_EMAIL: missdeer@dfordsoft.com
+deploy:
+  provider: releases
+  api_key:
+    secure: aPwmvkYdVaSg8WNZNaBNX4bAcqmr7B/tGSbbMa8T39PCPhKdZv9/aZQ06oOhMEp6ZQb4J0lWHgu7Rs659bGX5rzft8WxqLtRa8m1rEoNvDAFauFTjCNzcjwYGakykTRa/U+jhebLD8lyAY4WT9WwLLZNSLc4g5fPTTRr67GgB+E=
+  file: 
+    - ddnsclient-android-armv7.tar.gz          
+    - ddnsclient-android-x86.tar.gz            
+    - ddnsclient-darwin-amd64.tar.gz           
+    - ddnsclient-dragonflybsd-amd64.tar.gz     
+    - ddnsclient-freebsd-amd64.tar.gz          
+    - ddnsclient-freebsd-arm.tar.gz            
+    - ddnsclient-freebsd-x86.tar.gz            
+    - ddnsclient-linux-amd64.tar.gz            
+    - ddnsclient-linux-arm64.tar.gz            
+    - ddnsclient-linux-armv6.tar.gz            
+    - ddnsclient-linux-armv7.tar.gz            
+    - ddnsclient-linux-mips64.tar.gz           
+    - ddnsclient-linux-mips64le.tar.gz         
+    - ddnsclient-linux-ppc64.tar.gz            
+    - ddnsclient-linux-ppc64le.tar.gz          
+    - ddnsclient-linux-x86.tar.gz              
+    - ddnsclient-netbsd-amd64.tar.gz           
+    - ddnsclient-netbsd-arm.tar.gz             
+    - ddnsclient-netbsd-x86.tar.gz             
+    - ddnsclient-openbsd-amd64.tar.gz          
+    - ddnsclient-openbsd-x86.tar.gz            
+    - ddnsclient-solaris.tar.gz                
+    - ddnsclient-win-amd64.tar.gz              
+    - ddnsclient-win-x86.tar.gz   
+    - avege-android-armv7.tar.gz          
+    - avege-android-x86.tar.gz            
+    - avege-darwin-amd64.tar.gz           
+    - avege-dragonflybsd-amd64.tar.gz     
+    - avege-freebsd-amd64.tar.gz          
+    - avege-freebsd-arm.tar.gz            
+    - avege-freebsd-x86.tar.gz            
+    - avege-linux-amd64.tar.gz            
+    - avege-linux-arm64.tar.gz            
+    - avege-linux-armv6.tar.gz            
+    - avege-linux-armv7.tar.gz            
+    - avege-linux-mips64.tar.gz           
+    - avege-linux-mips64le.tar.gz         
+    - avege-linux-ppc64.tar.gz            
+    - avege-linux-ppc64le.tar.gz          
+    - avege-linux-x86.tar.gz              
+    - avege-netbsd-amd64.tar.gz           
+    - avege-netbsd-arm.tar.gz             
+    - avege-netbsd-x86.tar.gz             
+    - avege-openbsd-amd64.tar.gz          
+    - avege-openbsd-x86.tar.gz            
+    - avege-solaris.tar.gz                
+    - avege-win-amd64.tar.gz              
+    - avege-win-x86.tar.gz   
+  on:
+    repo: dfordsoft/ddnsclient
+    tags: true
+skip_cleanup: true
+install:
+  - go get github.com/dfordsoft/ddnsclient
+script:
+  - pwd && ls -l && cd cmd/cname
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=amd64 GOOS=linux go build -ldflags="-s -w"  && tar czvf cname-linux-amd64.tar.gz cname && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=386 GOOS=linux go build -ldflags="-s -w"  && tar czvf cname-linux-x86.tar.gz cname && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=arm GOARM=5 GOOS=linux go build -ldflags="-s -w"  && tar czvf cname-linux-armv5.tar.gz cname && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=arm GOARM=6 GOOS=linux go build -ldflags="-s -w"  && tar czvf cname-linux-armv6.tar.gz cname && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=arm GOARM=7 GOOS=linux go build -ldflags="-s -w"  && tar czvf cname-linux-armv7.tar.gz cname && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=arm64 GOOS=linux go build -ldflags="-s -w"  && tar czvf cname-linux-arm64.tar.gz cname && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=ppc64 GOOS=linux go build -ldflags="-s -w"  && tar czvf cname-linux-ppc64.tar.gz cname && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=ppc64le GOOS=linux go build -ldflags="-s -w"  && tar czvf cname-linux-ppc64le.tar.gz cname && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=mips64 GOOS=linux go build -ldflags="-s -w"  && tar czvf cname-linux-mips64.tar.gz cname && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=mips64le GOOS=linux go build -ldflags="-s -w"  && tar czvf cname-linux-mips64le.tar.gz cname && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=amd64 GOOS=darwin go build  && tar czvf cname-darwin-amd64.tar.gz cname && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=amd64 GOOS=windows go build  && tar czvf cname-windows-amd64.tar.gz cname.exe && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=386 GOOS=windows go build  && tar czvf cname-windows-x86.tar.gz cname.exe && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=amd64 GOOS=freebsd go build  && tar czvf cname-freebsd-amd64.tar.gz cname && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=386 GOOS=freebsd go build  && tar czvf cname-freebsd-x86.tar.gz cname && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=arm GOOS=freebsd go build  && tar czvf cname-freebsd-arm.tar.gz cname && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=amd64 GOOS=openbsd go build  && tar czvf cname-openbsd-amd64.tar.gz cname && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=386 GOOS=openbsd go build  && tar czvf cname-openbsd-x86.tar.gz cname && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=amd64 GOOS=netbsd go build  && tar czvf cname-netbsd-amd64.tar.gz cname && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=386 GOOS=netbsd go build  && tar czvf cname-netbsd-x86.tar.gz cname && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=arm GOOS=netbsd go build  && tar czvf cname-netbsd-arm.tar.gz cname && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=amd64 GOOS=dragonfly go build  && tar czvf cname-dragonflybsd-amd64.tar.gz cname && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=amd64 GOOS=solaris go build  && tar czvf cname-solaris-amd64.tar.gz cname && cp ./*.tar.gz ../
+  - cd ../ddnsclient∂
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=amd64 GOOS=linux go build -ldflags="-s -w"  && tar czvf ddnsclient-linux-amd64.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=386 GOOS=linux go build -ldflags="-s -w"  && tar czvf ddnsclient-linux-x86.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=arm GOARM=5 GOOS=linux go build -ldflags="-s -w"  && tar czvf ddnsclient-linux-armv5.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=arm GOARM=6 GOOS=linux go build -ldflags="-s -w"  && tar czvf ddnsclient-linux-armv6.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=arm GOARM=7 GOOS=linux go build -ldflags="-s -w"  && tar czvf ddnsclient-linux-armv7.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=arm64 GOOS=linux go build -ldflags="-s -w"  && tar czvf ddnsclient-linux-arm64.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=ppc64 GOOS=linux go build -ldflags="-s -w"  && tar czvf ddnsclient-linux-ppc64.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=ppc64le GOOS=linux go build -ldflags="-s -w"  && tar czvf ddnsclient-linux-ppc64le.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=mips64 GOOS=linux go build -ldflags="-s -w"  && tar czvf ddnsclient-linux-mips64.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=mips64le GOOS=linux go build -ldflags="-s -w"  && tar czvf ddnsclient-linux-mips64le.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=amd64 GOOS=darwin go build  && tar czvf ddnsclient-darwin-amd64.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=amd64 GOOS=windows go build  && tar czvf ddnsclient-windows-amd64.tar.gz app.conf.sample ddnsclient.exe && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=386 GOOS=windows go build  && tar czvf ddnsclient-windows-x86.tar.gz app.conf.sample ddnsclient.exe && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=amd64 GOOS=freebsd go build  && tar czvf ddnsclient-freebsd-amd64.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=386 GOOS=freebsd go build  && tar czvf ddnsclient-freebsd-x86.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=arm GOOS=freebsd go build  && tar czvf ddnsclient-freebsd-arm.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=amd64 GOOS=openbsd go build  && tar czvf ddnsclient-openbsd-amd64.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=386 GOOS=openbsd go build  && tar czvf ddnsclient-openbsd-x86.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=amd64 GOOS=netbsd go build  && tar czvf ddnsclient-netbsd-amd64.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=386 GOOS=netbsd go build  && tar czvf ddnsclient-netbsd-x86.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=arm GOOS=netbsd go build  && tar czvf ddnsclient-netbsd-arm.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=amd64 GOOS=dragonfly go build  && tar czvf ddnsclient-dragonflybsd-amd64.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=amd64 GOOS=solaris go build  && tar czvf ddnsclient-solaris-amd64.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
+  - cd .. && pwd && ls -l
