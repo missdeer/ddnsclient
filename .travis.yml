@@ -90,7 +90,7 @@ script:
   - env GOPATH=$GOPATH:$PWD/../.. GOARCH=arm GOOS=netbsd go build  && tar czvf cname-netbsd-arm.tar.gz cname && cp ./*.tar.gz ../
   - env GOPATH=$GOPATH:$PWD/../.. GOARCH=amd64 GOOS=dragonfly go build  && tar czvf cname-dragonflybsd-amd64.tar.gz cname && cp ./*.tar.gz ../
   - env GOPATH=$GOPATH:$PWD/../.. GOARCH=amd64 GOOS=solaris go build  && tar czvf cname-solaris-amd64.tar.gz cname && cp ./*.tar.gz ../
-  - cd ../ddnsclient∂
+  - cd ../ddnsclient
   - env GOPATH=$GOPATH:$PWD/../.. GOARCH=amd64 GOOS=linux go build -ldflags="-s -w"  && tar czvf ddnsclient-linux-amd64.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
   - env GOPATH=$GOPATH:$PWD/../.. GOARCH=386 GOOS=linux go build -ldflags="-s -w"  && tar czvf ddnsclient-linux-x86.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
   - env GOPATH=$GOPATH:$PWD/../.. GOARCH=arm GOARM=5 GOOS=linux go build -ldflags="-s -w"  && tar czvf ddnsclient-linux-armv5.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
