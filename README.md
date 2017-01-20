@@ -1,7 +1,8 @@
 # ddnsclient
 update ddns A record
 
-[![Build Status](https://secure.travis-ci.org/dfordsoft/ddnsclient.png)](https://travis-ci.org/dfordsoft/ddnsclient)
+[![Build Status](https://secure.travis-ci.org/dfordsoft/ddnsclient.png)](https://travis-ci.org/dfordsoft/ddnsclient) [![GitHub release](https://img.shields.io/github/release/dfordsoft/ddnsclient.svg?maxAge=2592000)](https://github.com/dfordsoft/ddnsclient/releases) [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/dfordsoft/ddnsclient/master/LICENSE)
+
 
 Support:
 ----
@@ -10,10 +11,16 @@ Support:
 - [CloudFlare](https://www.cloudflare.com)
 - [CloudXNS](https://www.cloudxns.net)
 
-Install:
+Get prebuilt binary:
 ----
+
+Click this button to download the binary for your platform: [![GitHub release](https://img.shields.io/github/release/dfordsoft/ddnsclient.svg?maxAge=2592000)](https://github.com/dfordsoft/ddnsclient/releases) 
+
+Build:
+----
+
 ```bash
-go get github.com/missdeer/dfordsoft/cmd/ddnsclient
+go get github.com/dfordsoft/cmd/ddnsclient
 ```
 
 Usage:
