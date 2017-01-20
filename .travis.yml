@@ -31,8 +31,8 @@ deploy:
     - ddnsclient-openbsd-amd64.tar.gz          
     - ddnsclient-openbsd-x86.tar.gz            
     - ddnsclient-solaris-amd64.tar.gz                
-    - ddnsclient-win-amd64.tar.gz              
-    - ddnsclient-win-x86.tar.gz          
+    - ddnsclient-windows-amd64.tar.gz              
+    - ddnsclient-windows-x86.tar.gz          
     - avege-darwin-amd64.tar.gz           
     - avege-dragonflybsd-amd64.tar.gz     
     - avege-freebsd-amd64.tar.gz          
@@ -53,8 +53,8 @@ deploy:
     - avege-openbsd-amd64.tar.gz          
     - avege-openbsd-x86.tar.gz            
     - avege-solaris-amd64.tar.gz                
-    - avege-win-amd64.tar.gz              
-    - avege-win-x86.tar.gz   
+    - avege-windows-amd64.tar.gz              
+    - avege-windows-x86.tar.gz   
   on:
     repo: dfordsoft/ddnsclient
     tags: true
