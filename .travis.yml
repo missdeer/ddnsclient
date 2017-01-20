@@ -30,7 +30,7 @@ deploy:
     - ddnsclient-netbsd-x86.tar.gz             
     - ddnsclient-openbsd-amd64.tar.gz          
     - ddnsclient-openbsd-x86.tar.gz            
-    - ddnsclient-solaris.tar.gz                
+    - ddnsclient-solaris-amd64.tar.gz                
     - ddnsclient-win-amd64.tar.gz              
     - ddnsclient-win-x86.tar.gz          
     - avege-darwin-amd64.tar.gz           
@@ -52,7 +52,7 @@ deploy:
     - avege-netbsd-x86.tar.gz             
     - avege-openbsd-amd64.tar.gz          
     - avege-openbsd-x86.tar.gz            
-    - avege-solaris.tar.gz                
+    - avege-solaris-amd64.tar.gz                
     - avege-win-amd64.tar.gz              
     - avege-win-x86.tar.gz   
   on:
