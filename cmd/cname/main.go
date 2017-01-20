@@ -139,7 +139,7 @@ func main() {
 	prefixes := strings.Split(prefixList, ",")
 	for _, prefix := range prefixes {
 		for i := 0; i <= maxCount; i++ {
-			subDomain := fmt.Sprintf("%s-%d", prefix, i)
+			subDomain := fmt.Sprintf("%s-%x", prefix, i)
 			cloudflareCNAME(subDomain)
 		}
 	}
