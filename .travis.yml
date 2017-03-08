@@ -21,7 +21,9 @@ deploy:
     - ddnsclient-linux-armv6.tar.gz            
     - ddnsclient-linux-armv7.tar.gz            
     - ddnsclient-linux-mips64.tar.gz           
-    - ddnsclient-linux-mips64le.tar.gz         
+    - ddnsclient-linux-mips64le.tar.gz             
+    - ddnsclient-linux-mips.tar.gz           
+    - ddnsclient-linux-mipsle.tar.gz     
     - ddnsclient-linux-ppc64.tar.gz            
     - ddnsclient-linux-ppc64le.tar.gz          
     - ddnsclient-linux-x86.tar.gz              
@@ -97,6 +99,8 @@ script:
   - env GOPATH=$GOPATH:$PWD/../.. GOARCH=ppc64le GOOS=linux go build -ldflags="-s -w"  && tar czvf ddnsclient-linux-ppc64le.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
   - env GOPATH=$GOPATH:$PWD/../.. GOARCH=mips64 GOOS=linux go build -ldflags="-s -w"  && tar czvf ddnsclient-linux-mips64.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
   - env GOPATH=$GOPATH:$PWD/../.. GOARCH=mips64le GOOS=linux go build -ldflags="-s -w"  && tar czvf ddnsclient-linux-mips64le.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=mips GOOS=linux go build -ldflags="-s -w"  && tar czvf ddnsclient-linux-mips.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
+  - env GOPATH=$GOPATH:$PWD/../.. GOARCH=mipsle GOOS=linux go build -ldflags="-s -w"  && tar czvf ddnsclient-linux-mipsle.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
   - env GOPATH=$GOPATH:$PWD/../.. GOARCH=amd64 GOOS=darwin go build  && tar czvf ddnsclient-darwin-amd64.tar.gz app.conf.sample ddnsclient && cp ./*.tar.gz ../
   - env GOPATH=$GOPATH:$PWD/../.. GOARCH=amd64 GOOS=windows go build  && tar czvf ddnsclient-windows-amd64.tar.gz app.conf.sample ddnsclient.exe && cp ./*.tar.gz ../
   - env GOPATH=$GOPATH:$PWD/../.. GOARCH=386 GOOS=windows go build  && tar czvf ddnsclient-windows-x86.tar.gz app.conf.sample ddnsclient.exe && cp ./*.tar.gz ../
