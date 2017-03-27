@@ -61,7 +61,7 @@ func getCurrentExternalIP() (string, error) {
 		return string(body), nil
 	}
 
-	return "", errors.New("invalid IP address")
+	return "", errors.New("invalid IP address: " + string(body))
 }
 
 func basicAuthorizeHttpRequest(user string, password string, requestUrl string) error {
