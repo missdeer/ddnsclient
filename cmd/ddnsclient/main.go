@@ -27,6 +27,7 @@ type Setting struct {
 }
 
 var (
+	ifconfigURL       string
 	currentExternalIP string
 	lastExternalIP    string
 	dnspodDomainList  = &models.DnspodDomainList{}
@@ -34,12 +35,15 @@ var (
 
 func getCurrentExternalIP() (string, error) {
 	client := &http.Client{}
-	ifconfigUrl := "https://if.yii.li"
-	req, err := http.NewRequest("GET", ifconfigUrl, nil)
+	req, err := http.NewRequest("GET", ifconfigURL, nil)
+	if err != nil {
+		fmt.Println("create request to ifconfig failed", err)
+		return "", err
+	}
 	req.Header.Set("User-Agent", "curl/7.41.0")
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Printf("request %s failed", ifconfigUrl)
+		fmt.Printf("request %s failed", ifconfigURL)
 		return "", err
 	}
 
@@ -725,6 +729,7 @@ func updateDDNS(setting *Setting) {
 var conf string
 
 func main() {
+	flag.StringVar(&ifconfigURL, "ifconfig", "https://if.yii.li", "set ifconfig URL")
 	flag.StringVar(&conf, "config", "app.conf", "set application config")
 	flag.Parse()
 
