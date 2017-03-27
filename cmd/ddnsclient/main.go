@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"crypto/md5"
+	"crypto/tls"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -28,10 +29,11 @@ type Setting struct {
 }
 
 var (
-	ifconfigURL       string
-	currentExternalIP string
-	lastExternalIP    string
-	dnspodDomainList  = &models.DnspodDomainList{}
+	insecureSkipVerify bool
+	ifconfigURL        string
+	currentExternalIP  string
+	lastExternalIP     string
+	dnspodDomainList   = &models.DnspodDomainList{}
 )
 
 func getCurrentExternalIP() (string, error) {
@@ -47,6 +49,9 @@ func getCurrentExternalIP() (string, error) {
 			IdleConnTimeout:       90 * time.Second,
 			TLSHandshakeTimeout:   10 * time.Second,
 			ExpectContinueTimeout: 1 * time.Second,
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: insecureSkipVerify,
+			},
 		},
 	}
 	req, err := http.NewRequest("GET", ifconfigURL, nil)
@@ -743,6 +748,7 @@ func updateDDNS(setting *Setting) {
 var conf string
 
 func main() {
+	flag.BoolVar(&insecureSkipVerify, "insecureSkipVerify", false, "if true, TLS accepts any certificate")
 	flag.StringVar(&ifconfigURL, "ifconfig", "https://if.yii.li", "set ifconfig URL")
 	flag.StringVar(&conf, "config", "app.conf", "set application config")
 	flag.Parse()
