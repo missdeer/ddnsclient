@@ -14,7 +14,7 @@ Support:
 Get prebuilt binary:
 ----
 
-Click this button to download the binary for your platform: [![GitHub release](https://img.shields.io/github/release/dfordsoft/ddnsclient.svg?maxAge=2592000)](https://github.com/dfordsoft/ddnsclient/releases) 
+Click this button to download the binary for your platform: [![GitHub release](https://img.shields.io/github/release/dfordsoft/ddnsclient.svg?maxAge=2592000)](https://github.com/dfordsoft/ddnsclient/releases)
 
 Build:
 ----
@@ -29,6 +29,8 @@ Usage:
 - modify app.conf as you like
 - run command: `./ddnsclient`
 - or specify a special configuration file path on commandline: `./ddnsclient -config /some/special/path/myapp.conf`
+- or specify a service URL to get current external IP: `./ddnsclient -ifconfig https://if.yii.li`
+- or specify a flag to ignore ifconfig service's SSL certificate verification: `./ddnsclient -insecureSkipVerify`
 
 Attention:
 ----
