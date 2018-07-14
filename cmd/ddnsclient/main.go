@@ -10,6 +10,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -17,6 +18,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/cloudflare/cloudflare-go"
 	"github.com/dfordsoft/ddnsclient/models"
 )
 
@@ -276,101 +278,64 @@ func cloudxnsRequest(apiKey string, secretKey string, domain string, sub_domain 
 }
 
 func cloudflareRequest(user string, token string, domain string, sub_domain string) error {
-	// get domain all records
-	cloudflareAPIUrl := "https://www.cloudflare.com/api_json.html"
-	client := &http.Client{}
-	resp, err := client.PostForm(cloudflareAPIUrl, url.Values{
-		"a":     {"rec_load_all"},
-		"tkn":   {token},
-		"email": {user},
-		"z":     {domain},
-	})
+	// Construct a new API object
+	api, err := cloudflare.New(token, user)
 	if err != nil {
-		fmt.Printf("request cloudflare all records failed\n")
-		return err
+		log.Fatal(err)
 	}
-	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	// Fetch user details on the account
+	u, err := api.UserDetails()
 	if err != nil {
-		fmt.Printf("reading cloudflare all records failed\n")
-		return err
+		log.Fatal(err)
+	}
+	// Print user details
+	fmt.Println("Cloudflare user information:", u)
+
+	// Fetch the zone ID
+	id, err := api.ZoneIDByName(domain) // Assuming example.com exists in your Cloudflare account already
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	recordList := new(models.CloudflareRecordList)
-	if err = json.Unmarshal(body, &recordList); err != nil {
-		fmt.Printf("unmarshalling cloudflare all records %s failed\n", string(body))
-		return err
+	// Fetch zone details
+	zone, err := api.ZoneDetails(id)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Print zone details
+	fmt.Println("Cloudflare zone detail:", zone)
+
+	// Fetch all records for a zone
+	recs, err := api.DNSRecords(id, cloudflare.DNSRecord{Type: "A", Name: sub_domain + "." + domain})
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	// insert or update
-	foundRecord := false
-	var recordId string
-	for _, v := range recordList.Response.Recs.Objs {
-		if v.Type == "A" && v.DisplayName == sub_domain {
-			recordId = v.Id
-			foundRecord = true
-			break
-		}
+	r := cloudflare.DNSRecord{
+		Type:    "A",
+		Name:    sub_domain + "." + domain,
+		Content: currentExternalIP,
+		ZoneID:  id,
 	}
-	if foundRecord == false {
+	if len(recs) == 0 {
 		// insert a new record
-		resp, err := client.PostForm(cloudflareAPIUrl, url.Values{
-			"a":       {"rec_new"},
-			"tkn":     {token},
-			"email":   {user},
-			"z":       {domain},
-			"ttl":     {"1"},
-			"type":    {"A"},
-			"name":    {sub_domain},
-			"content": {currentExternalIP},
-		})
+		_, err = api.CreateDNSRecord(id, r)
 		if err != nil {
-			fmt.Printf("request cloudflare new record failed\n")
-			return err
+			fmt.Println(err)
+		} else {
+			fmt.Printf("[%v] A record created to cloudflare: %s.%s => %s\n", time.Now(), sub_domain, domain, currentExternalIP)
 		}
-
-		defer resp.Body.Close()
-
-		body, err := ioutil.ReadAll(resp.Body)
+	} else {
+		// update
+		err = api.UpdateDNSRecord(id, recs[0].ID, r)
 		if err != nil {
-			fmt.Printf("reading cloudflare new record failed\n")
-			return err
+			fmt.Println(err)
+		} else {
+			fmt.Printf("[%v] A record updated to cloudflare: %s.%s => %s\n", time.Now(), sub_domain, domain, currentExternalIP)
 		}
-		// extract the new record id
-		respBody := new(models.CloudflareNewRecordResponseBody)
-		if err = json.Unmarshal(body, respBody); err != nil {
-			fmt.Printf("unmarshalling cloudflare new record response body failed\n")
-			return err
-		}
-		recordId = respBody.Response.Rec.Obj.Id
-		fmt.Printf("[%v] A record inserted into cloudflare: %s.%s => %s\n", time.Now(), sub_domain, domain, currentExternalIP)
 	}
-	// update the record
-	resp, err = client.PostForm(cloudflareAPIUrl, url.Values{
-		"a":            {"rec_edit"},
-		"tkn":          {token},
-		"email":        {user},
-		"z":            {domain},
-		"type":         {"A"},
-		"service_mode": {"0"},
-		"ttl":          {"1"},
-		"id":           {recordId},
-		"name":         {sub_domain},
-		"content":      {currentExternalIP},
-	})
-	if err != nil {
-		fmt.Printf("request cloudflare records edit failed\n")
-		return err
-	}
-	defer resp.Body.Close()
 
-	body, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Printf("reading cloudflare record edit response failed\n")
-		return err
-	}
-	fmt.Printf("[%v] A record updated to cloudflare: %s.%s => %s\n", time.Now(), sub_domain, domain, currentExternalIP)
 	return nil
 }
 
