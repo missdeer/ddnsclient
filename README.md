@@ -1,7 +1,7 @@
 # ddnsclient
 update ddns A record
 
-[![Build Status](https://secure.travis-ci.org/dfordsoft/ddnsclient.png)](https://travis-ci.org/dfordsoft/ddnsclient) [![GitHub release](https://img.shields.io/github/release/dfordsoft/ddnsclient.svg?maxAge=2592000)](https://github.com/dfordsoft/ddnsclient/releases) [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/dfordsoft/ddnsclient/master/LICENSE)
+[![Build Status](https://secure.travis-ci.org/missdeer/ddnsclient.png)](https://travis-ci.org/missdeer/ddnsclient) [![GitHub release](https://img.shields.io/github/release/missdeer/ddnsclient.svg?maxAge=2592000)](https://github.com/missdeer/ddnsclient/releases) [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/missdeer/ddnsclient/master/LICENSE)
 
 
 Support:
@@ -14,13 +14,13 @@ Support:
 Get prebuilt binary:
 ----
 
-Click this button to download the binary for your platform: [![GitHub release](https://img.shields.io/github/release/dfordsoft/ddnsclient.svg?maxAge=2592000)](https://github.com/dfordsoft/ddnsclient/releases)
+Click this button to download the binary for your platform: [![GitHub release](https://img.shields.io/github/release/missdeer/ddnsclient.svg?maxAge=2592000)](https://github.com/missdeer/ddnsclient/releases)
 
 Build:
 ----
 
 ```bash
-go get github.com/dfordsoft/cmd/ddnsclient
+go get github.com/missdeer/cmd/ddnsclient
 ```
 
 Usage:
@@ -34,4 +34,4 @@ Usage:
 
 Attention:
 ----
-Currently, ddnsclient util depends on [https://if.yii.li](https://github.com/dfordsoft/ddnsclient/blob/master/cmd/ddnsclient/main.go#L37) service to get the device public internet IP, if you want to setup your own service to archive this goal, please visit [ifconfig project site](https://github.com/dfordsoft/ifconfig) for more information.
+Currently, ddnsclient util depends on [https://if.yii.li](https://github.com/missdeer/ddnsclient/blob/master/cmd/ddnsclient/main.go#L37) service to get the device public internet IP, if you want to setup your own service to archive this goal, please visit [ifconfig project site](https://github.com/missdeer/ifconfig) for more information.
