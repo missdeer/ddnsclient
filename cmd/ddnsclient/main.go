@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/cloudflare/cloudflare-go"
-	"github.com/dfordsoft/ddnsclient/models"
+	"github.com/missdeer/ddnsclient/models"
 )
 
 type Setting struct {
