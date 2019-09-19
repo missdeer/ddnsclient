@@ -56,6 +56,7 @@ func getCurrentExternalIP() (string, error) {
 		fmt.Printf("request %s failed", ifconfigURL)
 		return "", err
 	}
+	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
