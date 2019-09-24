@@ -129,16 +129,20 @@ func getCurrentExternalIP(ipv4 bool) (string, error) {
 
 func updateDDNS(setting *Setting) {
 	var err error
-	currentExternalIPv4, err = getCurrentExternalIP(true)
-	if err != nil {
-		fmt.Println(err)
-		return
+	if networkStack == "ipv4" || networkStack == "dual" {
+		currentExternalIPv4, err = getCurrentExternalIP(true)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
 
-	currentExternalIPv6, err = getCurrentExternalIP(false)
-	if err != nil {
-		fmt.Println(err)
-		return
+	if networkStack == "ipv6" || networkStack == "dual" {
+		currentExternalIPv6, err = getCurrentExternalIP(false)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
 	basicAuth := func(v models.BasicAuthConfigurationItem) {
 		for {
@@ -181,8 +185,8 @@ func updateDDNS(setting *Setting) {
 			time.Sleep(1 * time.Minute)
 		}
 	}
-	if (len(currentExternalIPv4) != 0 && lastExternalIPv4 != currentExternalIPv4) ||
-		(len(currentExternalIPv6) != 0 && lastExternalIPv6 != currentExternalIPv6) {
+	if ((networkStack == "ipv4" || networkStack == "dual") && len(currentExternalIPv4) != 0 && lastExternalIPv4 != currentExternalIPv4) ||
+		((networkStack == "ipv6" || networkStack == "dual") && len(currentExternalIPv6) != 0 && lastExternalIPv6 != currentExternalIPv6) {
 		for _, v := range setting.BasicAuthItems {
 			go basicAuth(v)
 		}
@@ -198,10 +202,10 @@ func updateDDNS(setting *Setting) {
 		for _, v := range setting.CloudXNSItems {
 			go cloudxns(v)
 		}
-		if len(currentExternalIPv4) != 0 {
+		if (networkStack == "ipv4" || networkStack == "dual") && len(currentExternalIPv4) != 0 {
 			lastExternalIPv4 = currentExternalIPv4
 		}
-		if len(currentExternalIPv6) != 0 {
+		if (networkStack == "ipv6" || networkStack == "dual") && len(currentExternalIPv6) != 0 {
 			lastExternalIPv6 = currentExternalIPv6
 		}
 	}
