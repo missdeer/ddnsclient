@@ -52,7 +52,7 @@ func cloudxnsFindDomain(apiKey string, secretKey string, domain string) int {
 	return -1
 }
 
-func cloudxnsFindHostRecord(apiKey string, secretKey string, domainId int, sub_domain string) int {
+func cloudxnsFindHostRecord(apiKey string, secretKey string, domainId int, subDomain string) int {
 	client := &http.Client{}
 	// get host record list
 	cloudxnsAPIUrl := fmt.Sprintf("https://www.cloudxns.net/api2/host/%d?offset=0&row_num=2000", domainId)
@@ -82,7 +82,7 @@ func cloudxnsFindHostRecord(apiKey string, secretKey string, domainId int, sub_d
 	}
 
 	for _, v := range recordList.Data {
-		if v.Host == sub_domain {
+		if v.Host == subDomain {
 			return v.Id
 		}
 	}
@@ -90,7 +90,7 @@ func cloudxnsFindHostRecord(apiKey string, secretKey string, domainId int, sub_d
 	return -1
 }
 
-func cloudxnsRequest(apiKey string, secretKey string, domain string, sub_domain string) error {
+func cloudxnsRequest(apiKey string, secretKey string, domain string, subDomain string) error {
 	// find the domain
 	domainId := cloudxnsFindDomain(apiKey, secretKey, domain)
 	if domainId == -1 {
@@ -98,9 +98,9 @@ func cloudxnsRequest(apiKey string, secretKey string, domain string, sub_domain 
 		return errors.New("domain not exists")
 	}
 	// find the host
-	hostRecordId := cloudxnsFindHostRecord(apiKey, secretKey, domainId, sub_domain)
+	hostRecordId := cloudxnsFindHostRecord(apiKey, secretKey, domainId, subDomain)
 	if hostRecordId == -1 {
-		fmt.Println("can't find host record in list", sub_domain)
+		fmt.Println("can't find host record in list", subDomain)
 		return errors.New("host record not exists")
 	}
 	// find the resolve record
@@ -147,7 +147,7 @@ func cloudxnsRequest(apiKey string, secretKey string, domain string, sub_domain 
 	if foundRecord {
 		// update
 		postValues["domain_id"] = domainId
-		postValues["host"] = sub_domain
+		postValues["host"] = subDomain
 		postValues["value"] = currentExternalIPv4
 		p, err := json.Marshal(postValues)
 		if err != nil {
@@ -168,11 +168,11 @@ func cloudxnsRequest(apiKey string, secretKey string, domain string, sub_domain 
 			return err
 		}
 		defer resp.Body.Close()
-		fmt.Printf("A record updated to cloudXNS: %s.%s => %s\n", sub_domain, domain, currentExternalIPv4)
+		fmt.Printf("A record updated to cloudXNS: %s.%s => %s\n", subDomain, domain, currentExternalIPv4)
 	} else {
 		// insert
 		postValues["domain_id"] = fmt.Sprintf("%d", domainId)
-		postValues["host"] = sub_domain
+		postValues["host"] = subDomain
 		postValues["value"] = currentExternalIPv4
 		postValues["type"] = "A"
 		postValues["line_id"] = fmt.Sprintf("%d", lineId)
@@ -194,7 +194,7 @@ func cloudxnsRequest(apiKey string, secretKey string, domain string, sub_domain 
 			return err
 		}
 		defer resp.Body.Close()
-		fmt.Printf("A record inserted to cloudXNS: %s.%s => %s\n", sub_domain, domain, currentExternalIPv4)
+		fmt.Printf("A record inserted to cloudXNS: %s.%s => %s\n", subDomain, domain, currentExternalIPv4)
 	}
 	return nil
 }

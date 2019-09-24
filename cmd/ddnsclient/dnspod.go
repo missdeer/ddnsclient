@@ -17,7 +17,7 @@ var (
 	dnspodDomainList = &models.DnspodDomainList{}
 )
 
-func dnspodRequestByToken(id string, token string, domain string, sub_domain string) error {
+func dnspodRequestByToken(id string, token string, domain string, subDomain string) error {
 	needDomainList := false
 	if len(dnspodDomainList.Domains) == 0 {
 		needDomainList = true
@@ -101,7 +101,7 @@ func dnspodRequestByToken(id string, token string, domain string, sub_domain str
 	foundRecord := false
 	var recordID string
 	for _, v := range recordList.Records {
-		if v.Name == sub_domain {
+		if v.Name == subDomain {
 			foundRecord = true
 			recordID = v.Id
 			break
@@ -115,7 +115,7 @@ func dnspodRequestByToken(id string, token string, domain string, sub_domain str
 			"login_token": {id + "," + token},
 			"format":      {"json"},
 			"domain_id":   {strconv.Itoa(domainId)},
-			"sub_domain":  {sub_domain},
+			"sub_domain":  {subDomain},
 			"record_type": {"A"},
 			"record_line": {"默认"},
 			"value":       {currentExternalIPv4},
@@ -131,7 +131,7 @@ func dnspodRequestByToken(id string, token string, domain string, sub_domain str
 			return err
 		}
 
-		fmt.Printf("[%v] A record inserted into DNSPOD: %s.%s => %s\n", time.Now(), sub_domain, domain, currentExternalIPv4)
+		fmt.Printf("[%v] A record inserted into DNSPOD: %s.%s => %s\n", time.Now(), subDomain, domain, currentExternalIPv4)
 	} else {
 		// otherwise just update it
 		modifyRecordURL := "https://dnsapi.cn/Record.Modify"
@@ -140,7 +140,7 @@ func dnspodRequestByToken(id string, token string, domain string, sub_domain str
 			"format":      {"json"},
 			"record_id":   {recordID},
 			"domain_id":   {strconv.Itoa(domainId)},
-			"sub_domain":  {sub_domain},
+			"sub_domain":  {subDomain},
 			"record_type": {"A"},
 			"record_line": {"默认"},
 			"value":       {currentExternalIPv4},
@@ -155,13 +155,13 @@ func dnspodRequestByToken(id string, token string, domain string, sub_domain str
 			fmt.Printf("reading record modify response failed\n")
 			return err
 		}
-		fmt.Printf("[%v] A record updated to DNSPOD: %s.%s => %s\n", time.Now(), sub_domain, domain, currentExternalIPv4)
+		fmt.Printf("[%v] A record updated to DNSPOD: %s.%s => %s\n", time.Now(), subDomain, domain, currentExternalIPv4)
 	}
 
 	return nil
 }
 
-func dnspodRequest(user string, password string, domain string, sub_domain string) error {
+func dnspodRequest(user string, password string, domain string, subDomain string) error {
 	needDomainList := false
 	if len(dnspodDomainList.Domains) == 0 {
 		needDomainList = true
@@ -247,7 +247,7 @@ func dnspodRequest(user string, password string, domain string, sub_domain strin
 	foundRecord := false
 	var recordID string
 	for _, v := range recordList.Records {
-		if v.Name == sub_domain {
+		if v.Name == subDomain {
 			foundRecord = true
 			recordID = v.Id
 			break
@@ -262,7 +262,7 @@ func dnspodRequest(user string, password string, domain string, sub_domain strin
 			"login_password": {password},
 			"format":         {"json"},
 			"domain_id":      {strconv.Itoa(domainId)},
-			"sub_domain":     {sub_domain},
+			"sub_domain":     {subDomain},
 			"record_type":    {"A"},
 			"record_line":    {"默认"},
 			"value":          {currentExternalIPv4},
@@ -278,7 +278,7 @@ func dnspodRequest(user string, password string, domain string, sub_domain strin
 			return err
 		}
 
-		fmt.Printf("[%v] A record inserted into DNSPOD: %s.%s => %s\n", time.Now(), sub_domain, domain, currentExternalIPv4)
+		fmt.Printf("[%v] A record inserted into DNSPOD: %s.%s => %s\n", time.Now(), subDomain, domain, currentExternalIPv4)
 	} else {
 		// otherwise just update it
 		modifyRecordURL := "https://dnsapi.cn/Record.Modify"
@@ -288,7 +288,7 @@ func dnspodRequest(user string, password string, domain string, sub_domain strin
 			"format":         {"json"},
 			"record_id":      {recordID},
 			"domain_id":      {strconv.Itoa(domainId)},
-			"sub_domain":     {sub_domain},
+			"sub_domain":     {subDomain},
 			"record_type":    {"A"},
 			"record_line":    {"默认"},
 			"value":          {currentExternalIPv4},
@@ -303,7 +303,7 @@ func dnspodRequest(user string, password string, domain string, sub_domain strin
 			fmt.Printf("reading record modify response failed\n")
 			return err
 		}
-		fmt.Printf("[%v] A record updated to DNSPOD: %s.%s => %s\n", time.Now(), sub_domain, domain, currentExternalIPv4)
+		fmt.Printf("[%v] A record updated to DNSPOD: %s.%s => %s\n", time.Now(), subDomain, domain, currentExternalIPv4)
 	}
 
 	return nil

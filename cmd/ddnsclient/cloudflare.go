@@ -8,7 +8,7 @@ import (
 	"github.com/cloudflare/cloudflare-go"
 )
 
-func cloudflareRequest(user string, token string, domain string, sub_domain string) error {
+func cloudflareRequest(user string, token string, domain string, subDomain string) error {
 	// Construct a new API object
 	api, err := cloudflare.New(token, user)
 	if err != nil {
@@ -38,14 +38,14 @@ func cloudflareRequest(user string, token string, domain string, sub_domain stri
 	fmt.Println("Cloudflare zone detail:", zone)
 
 	// Fetch all records for a zone
-	recs, err := api.DNSRecords(id, cloudflare.DNSRecord{Type: "A", Name: sub_domain + "." + domain})
+	recs, err := api.DNSRecords(id, cloudflare.DNSRecord{Type: "A", Name: subDomain + "." + domain})
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	r := cloudflare.DNSRecord{
 		Type:    "A",
-		Name:    sub_domain + "." + domain,
+		Name:    subDomain + "." + domain,
 		Content: currentExternalIPv4,
 		ZoneID:  id,
 	}
@@ -55,7 +55,7 @@ func cloudflareRequest(user string, token string, domain string, sub_domain stri
 		if err != nil {
 			fmt.Println(err)
 		} else {
-			fmt.Printf("[%v] A record created to cloudflare: %s.%s => %s\n", time.Now(), sub_domain, domain, currentExternalIPv4)
+			fmt.Printf("[%v] A record created to cloudflare: %s.%s => %s\n", time.Now(), subDomain, domain, currentExternalIPv4)
 		}
 	} else {
 		// update
@@ -63,7 +63,7 @@ func cloudflareRequest(user string, token string, domain string, sub_domain stri
 		if err != nil {
 			fmt.Println(err)
 		} else {
-			fmt.Printf("[%v] A record updated to cloudflare: %s.%s => %s\n", time.Now(), sub_domain, domain, currentExternalIPv4)
+			fmt.Printf("[%v] A record updated to cloudflare: %s.%s => %s\n", time.Now(), subDomain, domain, currentExternalIPv4)
 		}
 	}
 
