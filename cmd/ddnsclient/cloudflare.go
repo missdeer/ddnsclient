@@ -13,12 +13,14 @@ func cloudflareRequest(user string, token string, domain string, subDomain strin
 	api, err := cloudflare.New(token, user)
 	if err != nil {
 		log.Fatal(err)
+		return err
 	}
 
 	// Fetch user details on the account
 	u, err := api.UserDetails()
 	if err != nil {
 		log.Fatal(err)
+		return err
 	}
 	// Print user details
 	fmt.Println("Cloudflare user information:", u)
@@ -27,12 +29,14 @@ func cloudflareRequest(user string, token string, domain string, subDomain strin
 	id, err := api.ZoneIDByName(domain) // Assuming example.com exists in your Cloudflare account already
 	if err != nil {
 		log.Fatal(err)
+		return err
 	}
 
 	// Fetch zone details
 	zone, err := api.ZoneDetails(id)
 	if err != nil {
 		log.Fatal(err)
+		return err
 	}
 	// Print zone details
 	fmt.Println("Cloudflare zone detail:", zone)
@@ -41,6 +45,7 @@ func cloudflareRequest(user string, token string, domain string, subDomain strin
 	recs, err := api.DNSRecords(id, cloudflare.DNSRecord{Type: "A", Name: subDomain + "." + domain})
 	if err != nil {
 		log.Fatal(err)
+		return err
 	}
 
 	r := cloudflare.DNSRecord{
@@ -54,6 +59,7 @@ func cloudflareRequest(user string, token string, domain string, subDomain strin
 		_, err = api.CreateDNSRecord(id, r)
 		if err != nil {
 			fmt.Println(err)
+			return err
 		} else {
 			fmt.Printf("[%v] A record created to cloudflare: %s.%s => %s\n", time.Now(), subDomain, domain, currentExternalIPv4)
 		}
@@ -62,6 +68,7 @@ func cloudflareRequest(user string, token string, domain string, subDomain strin
 		err = api.UpdateDNSRecord(id, recs[0].ID, r)
 		if err != nil {
 			fmt.Println(err)
+			return err
 		} else {
 			fmt.Printf("[%v] A record updated to cloudflare: %s.%s => %s\n", time.Now(), subDomain, domain, currentExternalIPv4)
 		}
