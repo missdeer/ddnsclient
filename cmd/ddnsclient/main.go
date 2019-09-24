@@ -1,24 +1,22 @@
 package main
 
 import (
-	"bytes"
-	"crypto/md5"
+	"context"
 	"crypto/tls"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"regexp"
-	"strconv"
+	"strings"
 	"time"
 
-	"github.com/cloudflare/cloudflare-go"
 	"github.com/missdeer/ddnsclient/models"
 )
 
@@ -30,20 +28,52 @@ type Setting struct {
 }
 
 var (
-	insecureSkipVerify bool
-	ifconfigURL        string
-	currentExternalIP  string
-	lastExternalIP     string
-	dnspodDomainList   = &models.DnspodDomainList{}
+	insecureSkipVerify  bool
+	ifconfigURL         string
+	currentExternalIPv4 string
+	currentExternalIPv6 string
+	lastExternalIPv4    string
+	lastExternalIPv6    string
+	networkStack        string
 )
 
-func getCurrentExternalIP() (string, error) {
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: insecureSkipVerify,
-			},
-		},
+func getCurrentExternalIP(ipv4 bool) (string, error) {
+	parse, err := url.Parse(ifconfigURL)
+	if err != nil {
+		log.Println("can't parse ifconfig URL", err)
+		return "", err
+	}
+	ips, err := net.LookupIP(parse.Host)
+	if err != nil {
+		log.Println("can't lookup IP", err)
+		return "", err
+	}
+	var targetURL string
+	for _, ip := range ips {
+		if ipv4 == true && ip.To4() != nil {
+			if parse.Port() != "" {
+				targetURL = fmt.Sprintf("%s:%s", ip.To4().String(), parse.Port())
+			} else {
+				if parse.Scheme == "http" {
+					targetURL = fmt.Sprintf("%s:80", ip.To4().String())
+				} else {
+					targetURL = fmt.Sprintf("%s:443", ip.To4().String())
+				}
+			}
+			break
+		}
+		if ipv4 == false && ip.To16() != nil {
+			if parse.Port() != "" {
+				targetURL = fmt.Sprintf("[%s]:%s", ip.To16().String(), parse.Port())
+			} else {
+				if parse.Scheme == "http" {
+					targetURL = fmt.Sprintf("[%s]:80", ip.To16().String())
+				} else {
+					targetURL = fmt.Sprintf("[%s]:443", ip.To16().String())
+				}
+			}
+			break
+		}
 	}
 	req, err := http.NewRequest("GET", ifconfigURL, nil)
 	if err != nil {
@@ -51,6 +81,24 @@ func getCurrentExternalIP() (string, error) {
 		return "", err
 	}
 	req.Header.Set("User-Agent", "curl/7.41.0")
+
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: insecureSkipVerify,
+			},
+			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+				if strings.HasPrefix(addr, parse.Host) {
+					addr = targetURL
+				}
+				dialer := &net.Dialer{
+					Timeout:   30 * time.Second,
+					KeepAlive: 30 * time.Second,
+				}
+				return dialer.DialContext(ctx, network, addr)
+			},
+		},
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Printf("request %s failed", ifconfigURL)
@@ -68,577 +116,30 @@ func getCurrentExternalIP() (string, error) {
 		body = body[:i-1]
 	}
 
-	if matched, err := regexp.Match(`^([0-9]{1,3}\.){3,3}[0-9]{1,3}$`, body); err == nil && matched == true {
+	if matched, err := regexp.Match(`^((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])$`, body); err == nil && matched == true {
+		return string(body), nil
+	}
+
+	if matched, err := regexp.Match(`^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$`, body); err == nil && matched == true {
 		return string(body), nil
 	}
 
 	return "", errors.New("invalid IP address: " + string(body))
 }
 
-func basicAuthorizeHttpRequest(user string, password string, requestUrl string) error {
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", requestUrl, nil)
-	req.SetBasicAuth(user, password)
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Printf("request %s failed\n", requestUrl)
-		return err
-	}
-	defer resp.Body.Close()
-	_, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Printf("reading response failed\n")
-		return err
-	}
-	return nil
-}
-
-func cloudxnsFindDomain(apiKey string, secretKey string, domain string) int {
-	client := &http.Client{}
-	// get domain list
-	cloudxnsAPIUrl := "https://www.cloudxns.net/api2/domain"
-	req, err := http.NewRequest("GET", cloudxnsAPIUrl, nil)
-	req.Header.Set("API-KEY", apiKey)
-	apiRequestDate := time.Now().String()
-	req.Header.Add("API-REQUEST-DATE", apiRequestDate)
-	sum := md5.Sum([]byte(apiKey + cloudxnsAPIUrl + apiRequestDate + secretKey))
-	req.Header.Add("API-HMAC", hex.EncodeToString(sum[:]))
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println("Getting CloudXNS domain list failed", err)
-		return -1
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Printf("reading cloudflare all domain list failed\n")
-		return -1
-	}
-
-	recordList := new(models.CloudXNSDomainList)
-	if err = json.Unmarshal(body, &recordList); err != nil {
-		fmt.Printf("unmarshalling CloudXNS all domain list %s failed: %v\n", string(body), err)
-		return -1
-	}
-
-	docoratedDomain := domain + "."
-	for _, v := range recordList.Data {
-		if v.Domain == docoratedDomain {
-			return v.Id
-		}
-	}
-	return -1
-}
-
-func cloudxnsFindHostRecord(apiKey string, secretKey string, domainId int, sub_domain string) int {
-	client := &http.Client{}
-	// get host record list
-	cloudxnsAPIUrl := fmt.Sprintf("https://www.cloudxns.net/api2/host/%d?offset=0&row_num=2000", domainId)
-	req, err := http.NewRequest("GET", cloudxnsAPIUrl, nil)
-	req.Header.Set("API-KEY", apiKey)
-	apiRequestDate := time.Now().String()
-	req.Header.Add("API-REQUEST-DATE", apiRequestDate)
-	sum := md5.Sum([]byte(apiKey + cloudxnsAPIUrl + apiRequestDate + secretKey))
-	req.Header.Add("API-HMAC", hex.EncodeToString(sum[:]))
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println("Getting CloudXNS host record list failed", err)
-		return -1
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Printf("reading CloudXNS all host records failed\n")
-		return -1
-	}
-
-	recordList := new(models.CloudXNSHostRecordList)
-	if err = json.Unmarshal(body, &recordList); err != nil {
-		fmt.Printf("unmarshalling CloudXNS all records %s failed\n", string(body))
-		return -1
-	}
-
-	for _, v := range recordList.Data {
-		if v.Host == sub_domain {
-			return v.Id
-		}
-	}
-
-	return -1
-}
-
-func cloudxnsRequest(apiKey string, secretKey string, domain string, sub_domain string) error {
-	// find the domain
-	domainId := cloudxnsFindDomain(apiKey, secretKey, domain)
-	if domainId == -1 {
-		fmt.Println("can't find domain in list", domain)
-		return errors.New("domain not exists")
-	}
-	// find the host
-	hostRecordId := cloudxnsFindHostRecord(apiKey, secretKey, domainId, sub_domain)
-	if hostRecordId == -1 {
-		fmt.Println("can't find host record in list", sub_domain)
-		return errors.New("host record not exists")
-	}
-	// find the resolve record
-	client := &http.Client{}
-
-	// get resolve record list
-	cloudxnsAPIUrl := fmt.Sprintf("https://www.cloudxns.net/api2/record/%d?host_id=%d&offset=0&row_num=2000", domainId, hostRecordId)
-	req, err := http.NewRequest("GET", cloudxnsAPIUrl, nil)
-	req.Header.Set("API-KEY", apiKey)
-	apiRequestDate := time.Now().String()
-	req.Header.Add("API-REQUEST-DATE", apiRequestDate)
-	sum := md5.Sum([]byte(apiKey + cloudxnsAPIUrl + apiRequestDate + secretKey))
-	req.Header.Add("API-HMAC", hex.EncodeToString(sum[:]))
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println("Getting CloudXNS resolve record list failed", err)
-		return err
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Printf("reading cloudflare all resolve records failed\n")
-		return err
-	}
-
-	recordList := new(models.CloudXNSResolveList)
-	if err = json.Unmarshal(body, &recordList); err != nil {
-		fmt.Printf("unmarshalling CloudXNS all resolve records %s failed: %v\n", string(body), err)
-		return err
-	}
-
-	// insert or update
-	foundRecord := false
-	var recordId int
-	var lineId int
-	if len(recordList.Data) > 0 {
-		foundRecord = true
-		recordId = recordList.Data[0].RecordId
-		lineId = recordList.Data[0].LineId
-	}
-
-	postValues := make(map[string]interface{})
-	if foundRecord {
-		// update
-		postValues["domain_id"] = domainId
-		postValues["host"] = sub_domain
-		postValues["value"] = currentExternalIP
-		p, err := json.Marshal(postValues)
-		if err != nil {
-			fmt.Println("marshal update body failed", err)
-			return err
-		}
-
-		cloudxnsAPIUrl := fmt.Sprintf("https://www.cloudxns.net/api2/record/%d", recordId)
-		req, err := http.NewRequest("PUT", cloudxnsAPIUrl, bytes.NewReader(p))
-		req.Header.Set("API-KEY", apiKey)
-		apiRequestDate := time.Now().String()
-		req.Header.Add("API-REQUEST-DATE", apiRequestDate)
-		sum := md5.Sum([]byte(apiKey + cloudxnsAPIUrl + string(p) + apiRequestDate + secretKey))
-		req.Header.Add("API-HMAC", hex.EncodeToString(sum[:]))
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Printf("[%v] Updating CloudXNS resolve item failed", time.Now(), err)
-			return err
-		}
-		defer resp.Body.Close()
-		fmt.Printf("A record updated to cloudXNS: %s.%s => %s\n", sub_domain, domain, currentExternalIP)
-	} else {
-		// insert
-		postValues["domain_id"] = fmt.Sprintf("%d", domainId)
-		postValues["host"] = sub_domain
-		postValues["value"] = currentExternalIP
-		postValues["type"] = "A"
-		postValues["line_id"] = fmt.Sprintf("%d", lineId)
-		p, err := json.Marshal(postValues)
-		if err != nil {
-			fmt.Println("marshal update body failed", err)
-			return err
-		}
-		cloudxnsAPIUrl := "https://www.cloudxns.net/api2/record"
-		req, err := http.NewRequest("POST", cloudxnsAPIUrl, bytes.NewReader(p))
-		req.Header.Set("API-KEY", apiKey)
-		apiRequestDate := time.Now().String()
-		req.Header.Add("API-REQUEST-DATE", apiRequestDate)
-		sum := md5.Sum([]byte(apiKey + cloudxnsAPIUrl + string(p) + apiRequestDate + secretKey))
-		req.Header.Add("API-HMAC", hex.EncodeToString(sum[:]))
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Printf("[%v] inserting CloudXNS resolve item failed", time.Now(), err)
-			return err
-		}
-		defer resp.Body.Close()
-		fmt.Printf("A record inserted to cloudXNS: %s.%s => %s\n", sub_domain, domain, currentExternalIP)
-	}
-	return nil
-}
-
-func cloudflareRequest(user string, token string, domain string, sub_domain string) error {
-	// Construct a new API object
-	api, err := cloudflare.New(token, user)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Fetch user details on the account
-	u, err := api.UserDetails()
-	if err != nil {
-		log.Fatal(err)
-	}
-	// Print user details
-	fmt.Println("Cloudflare user information:", u)
-
-	// Fetch the zone ID
-	id, err := api.ZoneIDByName(domain) // Assuming example.com exists in your Cloudflare account already
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Fetch zone details
-	zone, err := api.ZoneDetails(id)
-	if err != nil {
-		log.Fatal(err)
-	}
-	// Print zone details
-	fmt.Println("Cloudflare zone detail:", zone)
-
-	// Fetch all records for a zone
-	recs, err := api.DNSRecords(id, cloudflare.DNSRecord{Type: "A", Name: sub_domain + "." + domain})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	r := cloudflare.DNSRecord{
-		Type:    "A",
-		Name:    sub_domain + "." + domain,
-		Content: currentExternalIP,
-		ZoneID:  id,
-	}
-	if len(recs) == 0 {
-		// insert a new record
-		_, err = api.CreateDNSRecord(id, r)
-		if err != nil {
-			fmt.Println(err)
-		} else {
-			fmt.Printf("[%v] A record created to cloudflare: %s.%s => %s\n", time.Now(), sub_domain, domain, currentExternalIP)
-		}
-	} else {
-		// update
-		err = api.UpdateDNSRecord(id, recs[0].ID, r)
-		if err != nil {
-			fmt.Println(err)
-		} else {
-			fmt.Printf("[%v] A record updated to cloudflare: %s.%s => %s\n", time.Now(), sub_domain, domain, currentExternalIP)
-		}
-	}
-
-	return nil
-}
-
-func dnspodRequestByToken(id string, token string, domain string, sub_domain string) error {
-	needDomainList := false
-	if len(dnspodDomainList.Domains) == 0 {
-		needDomainList = true
-	}
-	var domainId int = 0
-	if needDomainList == false {
-		needDomainList = true
-		for _, v := range dnspodDomainList.Domains {
-			if v.Name == domain {
-				needDomainList = false
-				domainId = v.Id
-				break
-			}
-		}
-	}
-
-	client := &http.Client{}
-	if needDomainList {
-		// get domainn id first
-		domainListUrl := "https://dnsapi.cn/Domain.List"
-		resp, err := client.PostForm(domainListUrl, url.Values{
-			"login_token": {id + "," + token},
-			"format":      {"json"},
-		})
-		if err != nil {
-			fmt.Printf("request domain list failed\n")
-			return err
-		}
-		defer resp.Body.Close()
-
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			fmt.Printf("reading domain list failed\n")
-			return err
-		}
-
-		if err = json.Unmarshal(body, &dnspodDomainList); err != nil {
-			fmt.Printf("unmarshalling domain list %s failed\n", string(body))
-			return err
-		}
-	}
-	foundDomain := false
-	for _, v := range dnspodDomainList.Domains {
-		if v.Name == domain {
-			foundDomain = true
-			domainId = v.Id
-			break
-		}
-	}
-
-	if foundDomain == false {
-		fmt.Printf("domain %s doesn't exists\n", domain)
-		return errors.New("domain not found")
-	}
-
-	// check record list
-	recordListUrl := "https://dnsapi.cn/Record.List"
-	resp, err := client.PostForm(recordListUrl, url.Values{
-		"login_token": {id + "," + token},
-		"format":      {"json"},
-		"domain_id":   {strconv.Itoa(domainId)},
-	})
-	if err != nil {
-		fmt.Printf("request record list failed\n")
-		return err
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Printf("reading record list failed\n")
-		return err
-	}
-
-	recordList := new(models.DnspodRecordList)
-	if err = json.Unmarshal(body, recordList); err != nil {
-		fmt.Printf("unmarshalling record list %s failed\n", string(body))
-		fmt.Println(err)
-		return err
-	}
-	foundRecord := false
-	var recordID string
-	for _, v := range recordList.Records {
-		if v.Name == sub_domain {
-			foundRecord = true
-			recordID = v.Id
-			break
-		}
-	}
-
-	if foundRecord == false {
-		// if the sub domain doesn't exist, add one
-		addRecordURL := "https://dnsapi.cn/Record.Create"
-		resp, err := client.PostForm(addRecordURL, url.Values{
-			"login_token": {id + "," + token},
-			"format":      {"json"},
-			"domain_id":   {strconv.Itoa(domainId)},
-			"sub_domain":  {sub_domain},
-			"record_type": {"A"},
-			"record_line": {"默认"},
-			"value":       {currentExternalIP},
-		})
-		if err != nil {
-			fmt.Printf("request record insert failed\n")
-			return err
-		}
-		defer resp.Body.Close()
-
-		if _, err = ioutil.ReadAll(resp.Body); err != nil {
-			fmt.Printf("reading record insert response failed\n")
-			return err
-		}
-
-		fmt.Printf("[%v] A record inserted into DNSPOD: %s.%s => %s\n", time.Now(), sub_domain, domain, currentExternalIP)
-	} else {
-		// otherwise just update it
-		modifyRecordURL := "https://dnsapi.cn/Record.Modify"
-		resp, err := client.PostForm(modifyRecordURL, url.Values{
-			"login_token": {id + "," + token},
-			"format":      {"json"},
-			"record_id":   {recordID},
-			"domain_id":   {strconv.Itoa(domainId)},
-			"sub_domain":  {sub_domain},
-			"record_type": {"A"},
-			"record_line": {"默认"},
-			"value":       {currentExternalIP},
-		})
-		if err != nil {
-			fmt.Printf("request record modify failed\n")
-			return err
-		}
-		defer resp.Body.Close()
-
-		if _, err = ioutil.ReadAll(resp.Body); err != nil {
-			fmt.Printf("reading record modify response failed\n")
-			return err
-		}
-		fmt.Printf("[%v] A record updated to DNSPOD: %s.%s => %s\n", time.Now(), sub_domain, domain, currentExternalIP)
-	}
-
-	return nil
-}
-
-func dnspodRequest(user string, password string, domain string, sub_domain string) error {
-	needDomainList := false
-	if len(dnspodDomainList.Domains) == 0 {
-		needDomainList = true
-	}
-	var domainId int = 0
-	if needDomainList == false {
-		needDomainList = true
-		for _, v := range dnspodDomainList.Domains {
-			if v.Name == domain {
-				needDomainList = false
-				domainId = v.Id
-				break
-			}
-		}
-	}
-
-	client := &http.Client{}
-	if needDomainList {
-		// get domainn id first
-		domainListUrl := "https://dnsapi.cn/Domain.List"
-		resp, err := client.PostForm(domainListUrl, url.Values{
-			"login_email":    {user},
-			"login_password": {password},
-			"format":         {"json"},
-		})
-		if err != nil {
-			fmt.Printf("request domain list failed\n")
-			return err
-		}
-		defer resp.Body.Close()
-
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			fmt.Printf("reading domain list failed\n")
-			return err
-		}
-
-		if err = json.Unmarshal(body, &dnspodDomainList); err != nil {
-			fmt.Printf("unmarshalling domain list %s failed\n", string(body))
-			return err
-		}
-	}
-	foundDomain := false
-	for _, v := range dnspodDomainList.Domains {
-		if v.Name == domain {
-			foundDomain = true
-			domainId = v.Id
-			break
-		}
-	}
-
-	if foundDomain == false {
-		fmt.Printf("domain %s doesn't exists\n", domain)
-		return errors.New("domain not found")
-	}
-
-	// check record list
-	recordListUrl := "https://dnsapi.cn/Record.List"
-	resp, err := client.PostForm(recordListUrl, url.Values{
-		"login_email":    {user},
-		"login_password": {password},
-		"format":         {"json"},
-		"domain_id":      {strconv.Itoa(domainId)},
-	})
-	if err != nil {
-		fmt.Printf("request record list failed\n")
-		return err
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Printf("reading record list failed\n")
-		return err
-	}
-
-	recordList := new(models.DnspodRecordList)
-	if err = json.Unmarshal(body, recordList); err != nil {
-		fmt.Printf("unmarshalling record list %s failed\n", string(body))
-		fmt.Println(err)
-		return err
-	}
-	foundRecord := false
-	var recordID string
-	for _, v := range recordList.Records {
-		if v.Name == sub_domain {
-			foundRecord = true
-			recordID = v.Id
-			break
-		}
-	}
-
-	if foundRecord == false {
-		// if the sub domain doesn't exist, add one
-		addRecordURL := "https://dnsapi.cn/Record.Create"
-		resp, err := client.PostForm(addRecordURL, url.Values{
-			"login_email":    {user},
-			"login_password": {password},
-			"format":         {"json"},
-			"domain_id":      {strconv.Itoa(domainId)},
-			"sub_domain":     {sub_domain},
-			"record_type":    {"A"},
-			"record_line":    {"默认"},
-			"value":          {currentExternalIP},
-		})
-		if err != nil {
-			fmt.Printf("request record insert failed\n")
-			return err
-		}
-		defer resp.Body.Close()
-
-		if _, err = ioutil.ReadAll(resp.Body); err != nil {
-			fmt.Printf("reading record insert response failed\n")
-			return err
-		}
-
-		fmt.Printf("[%v] A record inserted into DNSPOD: %s.%s => %s\n", time.Now(), sub_domain, domain, currentExternalIP)
-	} else {
-		// otherwise just update it
-		modifyRecordURL := "https://dnsapi.cn/Record.Modify"
-		resp, err := client.PostForm(modifyRecordURL, url.Values{
-			"login_email":    {user},
-			"login_password": {password},
-			"format":         {"json"},
-			"record_id":      {recordID},
-			"domain_id":      {strconv.Itoa(domainId)},
-			"sub_domain":     {sub_domain},
-			"record_type":    {"A"},
-			"record_line":    {"默认"},
-			"value":          {currentExternalIP},
-		})
-		if err != nil {
-			fmt.Printf("request record modify failed\n")
-			return err
-		}
-		defer resp.Body.Close()
-
-		if _, err = ioutil.ReadAll(resp.Body); err != nil {
-			fmt.Printf("reading record modify response failed\n")
-			return err
-		}
-		fmt.Printf("[%v] A record updated to DNSPOD: %s.%s => %s\n", time.Now(), sub_domain, domain, currentExternalIP)
-	}
-
-	return nil
-}
 func updateDDNS(setting *Setting) {
 	var err error
-	currentExternalIP, err = getCurrentExternalIP()
+	currentExternalIPv4, err = getCurrentExternalIP(true)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
+	currentExternalIPv6, err = getCurrentExternalIP(false)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	basicAuth := func(v models.BasicAuthConfigurationItem) {
 		for {
 			if err := basicAuthorizeHttpRequest(v.UserName, v.Password, v.Url); err == nil {
@@ -680,7 +181,8 @@ func updateDDNS(setting *Setting) {
 			time.Sleep(1 * time.Minute)
 		}
 	}
-	if len(currentExternalIP) != 0 && lastExternalIP != currentExternalIP {
+	if (len(currentExternalIPv4) != 0 && lastExternalIPv4 != currentExternalIPv4) ||
+		(len(currentExternalIPv6) != 0 && lastExternalIPv6 != currentExternalIPv6) {
 		for _, v := range setting.BasicAuthItems {
 			go basicAuth(v)
 		}
@@ -696,7 +198,12 @@ func updateDDNS(setting *Setting) {
 		for _, v := range setting.CloudXNSItems {
 			go cloudxns(v)
 		}
-		lastExternalIP = currentExternalIP
+		if len(currentExternalIPv4) != 0 {
+			lastExternalIPv4 = currentExternalIPv4
+		}
+		if len(currentExternalIPv6) != 0 {
+			lastExternalIPv6 = currentExternalIPv6
+		}
 	}
 }
 
@@ -704,8 +211,9 @@ var conf string
 
 func main() {
 	flag.BoolVar(&insecureSkipVerify, "insecureSkipVerify", false, "if true, TLS accepts any certificate")
-	flag.StringVar(&ifconfigURL, "ifconfig", "https://if.yii.li", "set ifconfig URL")
+	flag.StringVar(&ifconfigURL, "ifconfig", "https://ifconfig.minidump.info", "set ifconfig URL")
 	flag.StringVar(&conf, "config", "app.conf", "set application config")
+	flag.StringVar(&networkStack, "stack", "ipv4", "set network stack, available values: ipv4, ipv6, dual")
 	flag.Parse()
 
 	fmt.Println("Dynamic DNS client")

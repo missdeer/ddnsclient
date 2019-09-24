@@ -20,7 +20,7 @@ Build:
 ----
 
 ```bash
-go get github.com/missdeer/cmd/ddnsclient
+go get github.com/missdeer/ddnsclient/cmd/ddnsclient
 ```
 
 Usage:
