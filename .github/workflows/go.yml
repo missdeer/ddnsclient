@@ -1,0 +1,173 @@
+name: Go
+on: [push]
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Set up Go 1.14
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.14
+      id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+      with:
+        ref: master
+        
+    - name: Build
+      run: |
+        cd cmd/ddnsclient
+        env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o linux-amd64/ddnsclient -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=linux GOARCH=386 go build -o linux-386/ddnsclient -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=5 go build -o linux-arm-5/ddnsclient -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=6 go build -o linux-arm-6/ddnsclient -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -o linux-arm-7/ddnsclient -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o linux-arm64/ddnsclient -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o darwin-amd64/ddnsclient -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o windows-amd64/ddnsclient.exe -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=windows GOARCH=386 go build -o windows-386/ddnsclient.exe -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=freebsd GOARCH=amd64 go build -o freebsd-amd64/ddnsclient -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=freebsd GOARCH=386 go build -o freebsd-386/ddnsclient -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=openbsd GOARCH=amd64 go build -o openbsd-amd64/ddnsclient -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=openbsd GOARCH=386 go build -o openbsd-386/ddnsclient -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=netbsd GOARCH=amd64 go build -o netbsd-amd64/ddnsclient -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=netbsd GOARCH=386 go build -o netbsd-386/ddnsclient -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=dragonfly GOARCH=amd64 go build -o dragonfly-amd64/ddnsclient -ldflags="-s -w" .
+        cd ../..
+        env GOPATH=$PWD/gopath go get -u github.com/missdeer/cicdutil
+      
+    - name: Upload artifact ddnsclient-linux-amd64
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: ddnsclient-linux-amd64
+        # Directory containing files to upload
+        path: linux-amd64
+
+    - name: Upload artifact ddnsclient-linux-386
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: ddnsclient-linux-386
+        # Directory containing files to upload
+        path: linux-386
+
+    - name: Upload artifact ddnsclient-linux-arm-5
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: ddnsclient-linux-arm-5
+        # Directory containing files to upload
+        path: linux-arm-5
+
+    - name: Upload artifact ddnsclient-linux-arm-6
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: ddnsclient-linux-arm-6
+        # Directory containing files to upload
+        path: linux-arm-6
+
+    - name: Upload artifact ddnsclient-linux-arm-7
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: ddnsclient-linux-arm-7
+        # Directory containing files to upload
+        path: linux-arm-7
+
+    - name: Upload artifact ddnsclient-linux-arm64
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: ddnsclient-linux-arm64
+        # Directory containing files to upload
+        path: linux-arm64
+
+    - name: Upload artifact ddnsclient-darwin-amd64
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: ddnsclient-darwin-amd64
+        # Directory containing files to upload
+        path: darwin-amd64
+
+    - name: Upload artifact ddnsclient-dragonfly-amd64
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: ddnsclient-dragonfly-amd64
+        # Directory containing files to upload
+        path: dragonfly-amd64
+
+    - name: Upload artifact ddnsclient-openbsd-amd64
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: ddnsclient-openbsd-amd64
+        # Directory containing files to upload
+        path: openbsd-amd64
+
+    - name: Upload artifact ddnsclient-openbsd-386
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: ddnsclient-openbsd-386
+        # Directory containing files to upload
+        path: openbsd-386
+
+    - name: Upload artifact ddnsclient-netbsd-amd64
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: ddnsclient-netbsd-amd64
+        # Directory containing files to upload
+        path: netbsd-amd64
+
+    - name: Upload artifact ddnsclient-netbsd-386
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: ddnsclient-netbsd-386
+        # Directory containing files to upload
+        path: netbsd-386
+
+    - name: Upload artifact ddnsclient-freebsd-amd64
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: ddnsclient-freebsd-amd64
+        # Directory containing files to upload
+        path: freebsd-amd64
+
+    - name: Upload artifact ddnsclient-freebsd-386
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: ddnsclient-freebsd-386
+        # Directory containing files to upload
+        path: freebsd-386
+
+    - name: Upload artifact ddnsclient-windows-amd64
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: ddnsclient-windows-amd64
+        # Directory containing files to upload
+        path: windows-amd64
+
+    - name: Upload artifact ddnsclient-windows-386
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: ddnsclient-windows-386
+        # Directory containing files to upload
+        path: windows-386
+
+    - name: Remove old artifacts
+      run: |
+        gopath/bin/cicdutil -p github -u missdeer -t ${{ secrets.GH_TOKEN }} -r ddnsclient -k 0 -a delete
