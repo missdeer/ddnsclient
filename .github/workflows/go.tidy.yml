@@ -33,7 +33,6 @@ jobs:
       -
         name: Commit and push changes
         run: |
-          cd ../..
           git add .
           if output=$(git status --porcelain) && [ ! -z "$output" ]; then
             git commit -m 'auto go mod tidy'
