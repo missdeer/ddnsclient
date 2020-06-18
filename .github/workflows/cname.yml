@@ -1,0 +1,101 @@
+name: cname
+on: [push]
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Set up Go 1.14
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.14
+      id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+      with:
+        ref: master
+        
+    - name: Build
+      run: |
+        cd cmd/cname
+        env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ../../linux-amd64/cname -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -o ../../linux-arm-7/cname -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o ../../darwin-amd64/cname -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o ../../windows-amd64/cname.exe -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=freebsd GOARCH=amd64 go build -o ../../freebsd-amd64/cname -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=openbsd GOARCH=amd64 go build -o ../../openbsd-amd64/cname -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=netbsd GOARCH=amd64 go build -o ../../netbsd-amd64/cname -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=dragonfly GOARCH=amd64 go build -o ../../dragonfly-amd64/cname -ldflags="-s -w" .
+        cd ../..
+        env GOPATH=$PWD/gopath go get -u github.com/missdeer/cicdutil
+      
+    - name: Upload artifact cname-linux-amd64
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: cname-linux-amd64
+        # Directory containing files to upload
+        path: linux-amd64
+
+    - name: Upload artifact cname-linux-arm-7
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: cname-linux-arm-7
+        # Directory containing files to upload
+        path: linux-arm-7
+
+    - name: Upload artifact cname-darwin-amd64
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: cname-darwin-amd64
+        # Directory containing files to upload
+        path: darwin-amd64
+
+    - name: Upload artifact cname-dragonfly-amd64
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: cname-dragonfly-amd64
+        # Directory containing files to upload
+        path: dragonfly-amd64
+
+    - name: Upload artifact cname-openbsd-amd64
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: cname-openbsd-amd64
+        # Directory containing files to upload
+        path: openbsd-amd64
+
+    - name: Upload artifact cname-netbsd-amd64
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: cname-netbsd-amd64
+        # Directory containing files to upload
+        path: netbsd-amd64
+
+    - name: Upload artifact cname-freebsd-amd64
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: cname-freebsd-amd64
+        # Directory containing files to upload
+        path: freebsd-amd64
+
+    - name: Upload artifact cname-windows-amd64
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: cname-windows-amd64
+        # Directory containing files to upload
+        path: windows-amd64
+
+    - name: Remove old artifacts
+      run: |
+        gopath/bin/cicdutil -p github -u missdeer -t ${{ secrets.GH_TOKEN }} -r cname -k 0 -a delete

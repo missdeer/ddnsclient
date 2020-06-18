@@ -1,0 +1,101 @@
+name: cfipchange
+on: [push]
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Set up Go 1.14
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.14
+      id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+      with:
+        ref: master
+        
+    - name: Build
+      run: |
+        cd cmd/cfipchange
+        env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ../../linux-amd64/cfipchange -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -o ../../linux-arm-7/cfipchange -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o ../../darwin-amd64/cfipchange -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o ../../windows-amd64/cfipchange.exe -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=freebsd GOARCH=amd64 go build -o ../../freebsd-amd64/cfipchange -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=openbsd GOARCH=amd64 go build -o ../../openbsd-amd64/cfipchange -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=netbsd GOARCH=amd64 go build -o ../../netbsd-amd64/cfipchange -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=dragonfly GOARCH=amd64 go build -o ../../dragonfly-amd64/cfipchange -ldflags="-s -w" .
+        cd ../..
+        env GOPATH=$PWD/gopath go get -u github.com/missdeer/cicdutil
+      
+    - name: Upload artifact cfipchange-linux-amd64
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: cfipchange-linux-amd64
+        # Directory containing files to upload
+        path: linux-amd64
+
+    - name: Upload artifact cfipchange-linux-arm-7
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: cfipchange-linux-arm-7
+        # Directory containing files to upload
+        path: linux-arm-7
+
+    - name: Upload artifact cfipchange-darwin-amd64
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: cfipchange-darwin-amd64
+        # Directory containing files to upload
+        path: darwin-amd64
+
+    - name: Upload artifact cfipchange-dragonfly-amd64
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: cfipchange-dragonfly-amd64
+        # Directory containing files to upload
+        path: dragonfly-amd64
+
+    - name: Upload artifact cfipchange-openbsd-amd64
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: cfipchange-openbsd-amd64
+        # Directory containing files to upload
+        path: openbsd-amd64
+
+    - name: Upload artifact cfipchange-netbsd-amd64
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: cfipchange-netbsd-amd64
+        # Directory containing files to upload
+        path: netbsd-amd64
+
+    - name: Upload artifact cfipchange-freebsd-amd64
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: cfipchange-freebsd-amd64
+        # Directory containing files to upload
+        path: freebsd-amd64
+
+    - name: Upload artifact cfipchange-windows-amd64
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: cfipchange-windows-amd64
+        # Directory containing files to upload
+        path: windows-amd64
+
+    - name: Remove old artifacts
+      run: |
+        gopath/bin/cicdutil -p github -u missdeer -t ${{ secrets.GH_TOKEN }} -r cfipchange -k 0 -a delete
