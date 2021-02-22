@@ -10,10 +10,10 @@ jobs:
         cmd: [ddnsclient, cname, cfipchange]
     steps:
 
-    - name: Set up Go 1.14
-      uses: actions/setup-go@v1
+    - name: Set up Go 1.16
+      uses: actions/setup-go@v2
       with:
-        go-version: 1.14
+        go-version: 1.16
       id: go
 
     - name: Check out code into the Go module directory
@@ -27,6 +27,7 @@ jobs:
         env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ../../linux-amd64/${{ matrix.cmd }} -ldflags="-s -w" .
         env CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -o ../../linux-arm-7/${{ matrix.cmd }} -ldflags="-s -w" .
         env CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o ../../darwin-amd64/${{ matrix.cmd }} -ldflags="-s -w" .
+        env CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -o ../../darwin-arm64/${{ matrix.cmd }} -ldflags="-s -w" .
         env CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o ../../windows-amd64/${{ matrix.cmd }}.exe -ldflags="-s -w" .
         env CGO_ENABLED=0 GOOS=freebsd GOARCH=amd64 go build -o ../../freebsd-amd64/${{ matrix.cmd }} -ldflags="-s -w" .
         env CGO_ENABLED=0 GOOS=openbsd GOARCH=amd64 go build -o ../../openbsd-amd64/${{ matrix.cmd }} -ldflags="-s -w" .
@@ -59,6 +60,14 @@ jobs:
         # Directory containing files to upload
         path: darwin-amd64
 
+    - name: Upload artifact ${{ matrix.cmd }}-darwin-arm64
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: ${{ matrix.cmd }}-darwin-arm64
+        # Directory containing files to upload
+        path: darwin-arm64
+        
     - name: Upload artifact ${{ matrix.cmd }}-dragonfly-amd64
       uses: actions/upload-artifact@v1.0.0
       with:
