@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -21,13 +22,14 @@ var (
 )
 
 func listRecord(api *cloudflare.API) {
-	zones, err := api.ListZones()
+	ctx := context.Background()
+	zones, err := api.ListZones(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	for _, zone := range zones {
-		records, err := api.DNSRecords(zone.ID, cloudflare.DNSRecord{})
+		records, err := api.DNSRecords(ctx, zone.ID, cloudflare.DNSRecord{})
 		if err != nil {
 			log.Println("getting dns records failed for ", zone.Host, err)
 			continue
@@ -41,13 +43,14 @@ func listRecord(api *cloudflare.API) {
 }
 
 func modifyRecord(api *cloudflare.API, rrType string, name string, content string) {
-	zones, err := api.ListZones()
+	ctx := context.Background()
+	zones, err := api.ListZones(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	for _, zone := range zones {
-		records, err := api.DNSRecords(zone.ID, cloudflare.DNSRecord{})
+		records, err := api.DNSRecords(ctx, zone.ID, cloudflare.DNSRecord{})
 		if err != nil {
 			log.Println("getting dns records failed for ", zone.Host, err)
 			continue
@@ -56,7 +59,7 @@ func modifyRecord(api *cloudflare.API, rrType string, name string, content strin
 			if record.Name == name && (rrType == "" || record.Type == rrType) {
 				old := record.Content
 				record.Content = content
-				if err = api.UpdateDNSRecord(zone.ID, record.ID, record); err != nil {
+				if err = api.UpdateDNSRecord(ctx, zone.ID, record.ID, record); err != nil {
 					log.Println("update dns record failed", err)
 				} else {
 					log.Printf("dns record %s.%s updated from %s to %s\n", record.Name, zone.Host, old, content)
@@ -68,13 +71,14 @@ func modifyRecord(api *cloudflare.API, rrType string, name string, content strin
 }
 
 func changeSpecifiedRecords(api *cloudflare.API, rrType string, from string, to string) {
-	zones, err := api.ListZones()
+	ctx := context.Background()
+	zones, err := api.ListZones(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	for _, zone := range zones {
-		records, err := api.DNSRecords(zone.ID, cloudflare.DNSRecord{})
+		records, err := api.DNSRecords(ctx, zone.ID, cloudflare.DNSRecord{})
 		if err != nil {
 			log.Println("getting dns records failed for ", zone.Host, err)
 			continue
@@ -82,7 +86,7 @@ func changeSpecifiedRecords(api *cloudflare.API, rrType string, from string, to 
 		for _, record := range records {
 			if record.Content == from && (rrType == "" || record.Type == rrType) {
 				record.Content = to
-				if err = api.UpdateDNSRecord(zone.ID, record.ID, record); err != nil {
+				if err = api.UpdateDNSRecord(ctx, zone.ID, record.ID, record); err != nil {
 					log.Println("update dns record failed", err)
 				} else {
 					log.Printf("dns record %s.%s updated from %s to %s\n", record.Name, zone.Host, from, to)
