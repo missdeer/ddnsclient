@@ -218,6 +218,10 @@ func main() {
 	flag.StringVar(&ifconfigURL, "ifconfig", "https://ifconfig.minidump.info", "set ifconfig URL")
 	flag.StringVar(&conf, "config", "app.conf", "set application config")
 	flag.StringVar(&networkStack, "stack", "ipv4", "set network stack, available values: ipv4, ipv6, dual")
+	var interval string
+	flag.StringVar(&interval, "interval", "1m", "set update interval, available values: 1m, 5m, 10m, 30m, 1h, 2h, 6h, 12h, 1d")
+	var singleShot bool
+	flag.BoolVar(&singleShot, "singleShot", false, "if true, update once and exit")
 	flag.Parse()
 
 	fmt.Println("Dynamic DNS client")
@@ -243,12 +247,18 @@ func main() {
 		return
 	}
 
-	go updateDDNS(setting)
-	timer := time.NewTicker(1 * time.Minute) // every 1 minute
-	for {
-		select {
-		case <-timer.C:
-			go updateDDNS(setting)
+	updateDDNS(setting)
+	if !singleShot {
+		duration, err := time.ParseDuration(interval)
+		if err != nil {
+			log.Fatal(err)
+		}
+		timer := time.NewTicker(duration) // every 1 minute
+		for {
+			select {
+			case <-timer.C:
+				go updateDDNS(setting)
+			}
 		}
 	}
 }
