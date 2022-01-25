@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
@@ -16,8 +17,9 @@ func cloudflareRequest(user string, token string, domain string, subDomain strin
 		return err
 	}
 
+	ctx := context.Background()
 	// Fetch user details on the account
-	u, err := api.UserDetails()
+	u, err := api.UserDetails(ctx)
 	if err != nil {
 		log.Fatal(err)
 		return err
@@ -33,7 +35,7 @@ func cloudflareRequest(user string, token string, domain string, subDomain strin
 	}
 
 	// Fetch zone details
-	zone, err := api.ZoneDetails(id)
+	zone, err := api.ZoneDetails(ctx, id)
 	if err != nil {
 		log.Fatal(err)
 		return err
@@ -42,7 +44,7 @@ func cloudflareRequest(user string, token string, domain string, subDomain strin
 	fmt.Println("Cloudflare zone detail:", zone)
 
 	// Fetch all records for a zone
-	recs, err := api.DNSRecords(id, cloudflare.DNSRecord{Type: "A", Name: subDomain + "." + domain})
+	recs, err := api.DNSRecords(ctx, id, cloudflare.DNSRecord{Type: "A", Name: subDomain + "." + domain})
 	if err != nil {
 		log.Fatal(err)
 		return err
@@ -56,7 +58,7 @@ func cloudflareRequest(user string, token string, domain string, subDomain strin
 	}
 	if len(recs) == 0 {
 		// insert a new record
-		_, err = api.CreateDNSRecord(id, r)
+		_, err = api.CreateDNSRecord(ctx, id, r)
 		if err != nil {
 			fmt.Println(err)
 			return err
@@ -65,7 +67,7 @@ func cloudflareRequest(user string, token string, domain string, subDomain strin
 		}
 	} else {
 		// update
-		err = api.UpdateDNSRecord(id, recs[0].ID, r)
+		err = api.UpdateDNSRecord(ctx, id, recs[0].ID, r)
 		if err != nil {
 			fmt.Println(err)
 			return err
