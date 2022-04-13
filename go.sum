@@ -1,6 +1,6 @@
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
-github.com/cloudflare/cloudflare-go v0.36.0 h1:GIDxQz61fYUFKs5Cr4mCbZlMz+GepX9+23W4/mjaQdk=
-github.com/cloudflare/cloudflare-go v0.36.0/go.mod h1:EfqOgbgOTf9U+67Z5MR2t/MuVj5OjLlXs+dN6DBh6C8=
+github.com/cloudflare/cloudflare-go v0.37.0 h1:8LUyAtev5PZ92Wzxzsm9jOQj0ZTz3BBc5F1ISfwgxvk=
+github.com/cloudflare/cloudflare-go v0.37.0/go.mod h1:EfqOgbgOTf9U+67Z5MR2t/MuVj5OjLlXs+dN6DBh6C8=
 github.com/cpuguy83/go-md2man/v2 v2.0.1/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
 github.com/dave/dst v0.26.2/go.mod h1:UMDJuIRPfyUCC78eFuB+SV/WI8oDeyFDvM/JR6NI3IU=
 github.com/dave/gopackages v0.0.0-20170318123100-46e7023ec56e/go.mod h1:i00+b/gKdIDIxuLDFob7ustLAVqhsZRk2qVZrArELGQ=
