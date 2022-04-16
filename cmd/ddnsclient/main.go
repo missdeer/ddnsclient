@@ -32,10 +32,32 @@ var (
 	ifconfigURL         string
 	currentExternalIPv4 string
 	currentExternalIPv6 string
+	currentInternalIPv4 string
+	currentInternalIPv6 string
 	lastExternalIPv4    string
 	lastExternalIPv6    string
+	lastInternalIPv4    string
+	lastInternalIPv6    string
 	networkStack        string
 )
+
+func getCurrentInternalIPs(ipv4 bool) ([]string, error) {
+	var ips []string
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	for _, address := range addrs {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if (ipv4 && ipnet.IP.To4() != nil) || (!ipv4 && ipnet.IP.To16() != nil) {
+				ips = append(ips, ipnet.IP.String())
+			}
+		}
+	}
+
+	return ips, nil
+}
 
 func getCurrentExternalIP(ipv4 bool) (string, error) {
 	parse, err := url.Parse(ifconfigURL)
@@ -135,6 +157,12 @@ func updateDDNS(setting *Setting) {
 			fmt.Println(err)
 			return
 		}
+		currentInternalIPsV4, e := getCurrentInternalIPs(true)
+		if e != nil {
+			fmt.Println(err)
+			return
+		}
+		currentInternalIPv4 = currentInternalIPsV4[0]
 	}
 
 	if networkStack == "ipv6" || networkStack == "dual" {
@@ -143,6 +171,12 @@ func updateDDNS(setting *Setting) {
 			fmt.Println(err)
 			return
 		}
+		currentInternalIPsV6, e := getCurrentInternalIPs(false)
+		if e != nil {
+			fmt.Println(err)
+			return
+		}
+		currentInternalIPv6 = currentInternalIPsV6[0]
 	}
 	basicAuth := func(v models.BasicAuthConfigurationItem) {
 		for {
@@ -156,11 +190,11 @@ func updateDDNS(setting *Setting) {
 	dnspod := func(v models.DnspodConfigurationItem) {
 		for {
 			if len(v.Token) != 0 && len(v.TokenId) != 0 {
-				if err := dnspodRequestByToken(v.TokenId, v.Token, v.Domain, v.SubDomain); err == nil {
+				if err := dnspodRequestByToken(v.TokenId, v.Token, v.Domain, v.SubDomain, v.Internal); err == nil {
 					break
 				}
 			} else if len(v.UserName) != 0 && len(v.Password) != 0 {
-				if err := dnspodRequest(v.UserName, v.Password, v.Domain, v.SubDomain); err == nil {
+				if err := dnspodRequest(v.UserName, v.Password, v.Domain, v.SubDomain, v.Internal); err == nil {
 					break
 				}
 			}
@@ -170,7 +204,7 @@ func updateDDNS(setting *Setting) {
 
 	cloudflare := func(v models.CloudflareConfigurationItem) {
 		for {
-			if err := cloudflareRequest(v.UserName, v.Token, v.Domain, v.SubDomain); err == nil {
+			if err := cloudflareRequest(v.UserName, v.Token, v.Domain, v.SubDomain, v.Internal); err == nil {
 				break
 			}
 			time.Sleep(1 * time.Minute)
@@ -179,14 +213,14 @@ func updateDDNS(setting *Setting) {
 
 	cloudxns := func(v models.CloudXNSConfigurationItem) {
 		for {
-			if err := cloudxnsRequest(v.APIKey, v.SecretKey, v.Domain, v.SubDomain); err == nil {
+			if err := cloudxnsRequest(v.APIKey, v.SecretKey, v.Domain, v.SubDomain, v.Internal); err == nil {
 				break
 			}
 			time.Sleep(1 * time.Minute)
 		}
 	}
-	if ((networkStack == "ipv4" || networkStack == "dual") && len(currentExternalIPv4) != 0 && lastExternalIPv4 != currentExternalIPv4) ||
-		((networkStack == "ipv6" || networkStack == "dual") && len(currentExternalIPv6) != 0 && lastExternalIPv6 != currentExternalIPv6) {
+	if ((networkStack == "ipv4" || networkStack == "dual") && (len(currentExternalIPv4) != 0 && lastExternalIPv4 != currentExternalIPv4) || (len(currentInternalIPv4) != 0 && lastInternalIPv4 != currentInternalIPv4)) ||
+		((networkStack == "ipv6" || networkStack == "dual") && (len(currentExternalIPv6) != 0 && lastExternalIPv6 != currentExternalIPv6) || (len(currentInternalIPv6) != 0 && lastInternalIPv6 != currentInternalIPv6)) {
 		for _, v := range setting.BasicAuthItems {
 			go basicAuth(v)
 		}
@@ -205,8 +239,14 @@ func updateDDNS(setting *Setting) {
 		if (networkStack == "ipv4" || networkStack == "dual") && len(currentExternalIPv4) != 0 {
 			lastExternalIPv4 = currentExternalIPv4
 		}
+		if (networkStack == "ipv4" || networkStack == "dual") && len(currentInternalIPv4) != 0 {
+			lastExternalIPv4 = currentInternalIPv4
+		}
 		if (networkStack == "ipv6" || networkStack == "dual") && len(currentExternalIPv6) != 0 {
-			lastExternalIPv6 = currentExternalIPv6
+			lastInternalIPv6 = currentExternalIPv6
+		}
+		if (networkStack == "ipv6" || networkStack == "dual") && len(currentInternalIPv6) != 0 {
+			lastInternalIPv6 = currentInternalIPv6
 		}
 	}
 }

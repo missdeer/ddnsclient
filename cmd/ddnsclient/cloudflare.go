@@ -9,7 +9,7 @@ import (
 	"github.com/cloudflare/cloudflare-go"
 )
 
-func cloudflareRequest(user string, token string, domain string, subDomain string) error {
+func cloudflareRequest(user string, token string, domain string, subDomain string, isInternal bool) error {
 	// Construct a new API object
 	api, err := cloudflare.New(token, user)
 	if err != nil {
@@ -50,10 +50,14 @@ func cloudflareRequest(user string, token string, domain string, subDomain strin
 		return err
 	}
 
+	newIP := currentExternalIPv4
+	if isInternal {
+		newIP = currentInternalIPv4
+	}
 	r := cloudflare.DNSRecord{
 		Type:    "A",
 		Name:    subDomain + "." + domain,
-		Content: currentExternalIPv4,
+		Content: newIP,
 		ZoneID:  id,
 	}
 	if len(recs) == 0 {

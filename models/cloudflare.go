@@ -5,6 +5,7 @@ type CloudflareConfigurationItem struct {
 	Token     string `json:"token"`
 	Domain    string `json:"domain"`
 	SubDomain string `json:"sub_domain"`
+	Internal  bool   `json:",omitempty"`
 }
 
 type CloudflareRecordItem struct {

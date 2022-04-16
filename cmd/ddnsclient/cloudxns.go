@@ -90,7 +90,7 @@ func cloudxnsFindHostRecord(apiKey string, secretKey string, domainId int, subDo
 	return -1
 }
 
-func cloudxnsRequest(apiKey string, secretKey string, domain string, subDomain string) error {
+func cloudxnsRequest(apiKey string, secretKey string, domain string, subDomain string, isInternal bool) error {
 	// find the domain
 	domainId := cloudxnsFindDomain(apiKey, secretKey, domain)
 	if domainId == -1 {
@@ -143,12 +143,16 @@ func cloudxnsRequest(apiKey string, secretKey string, domain string, subDomain s
 		lineId = recordList.Data[0].LineId
 	}
 
+	newIP := currentExternalIPv4
+	if isInternal {
+		newIP = currentInternalIPv4
+	}
 	postValues := make(map[string]interface{})
 	if foundRecord {
 		// update
 		postValues["domain_id"] = domainId
 		postValues["host"] = subDomain
-		postValues["value"] = currentExternalIPv4
+		postValues["value"] = newIP
 		p, err := json.Marshal(postValues)
 		if err != nil {
 			fmt.Println("marshal update body failed", err)
@@ -173,7 +177,7 @@ func cloudxnsRequest(apiKey string, secretKey string, domain string, subDomain s
 		// insert
 		postValues["domain_id"] = fmt.Sprintf("%d", domainId)
 		postValues["host"] = subDomain
-		postValues["value"] = currentExternalIPv4
+		postValues["value"] = newIP
 		postValues["type"] = "A"
 		postValues["line_id"] = fmt.Sprintf("%d", lineId)
 		p, err := json.Marshal(postValues)

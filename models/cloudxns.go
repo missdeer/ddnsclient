@@ -5,6 +5,7 @@ type CloudXNSConfigurationItem struct {
 	SecretKey string `json:"secretkey"`
 	Domain    string `json:"domain"`
 	SubDomain string `json:"sub_domain"`
+	Internal  bool   `json:",omitempty"`
 }
 
 type CloudXNSDomainItem struct {

@@ -17,7 +17,7 @@ var (
 	dnspodDomainList = &models.DnspodDomainList{}
 )
 
-func dnspodRequestByToken(id string, token string, domain string, subDomain string) error {
+func dnspodRequestByToken(id string, token string, domain string, subDomain string, isInternal bool) error {
 	needDomainList := false
 	if len(dnspodDomainList.Domains) == 0 {
 		needDomainList = true
@@ -108,6 +108,10 @@ func dnspodRequestByToken(id string, token string, domain string, subDomain stri
 		}
 	}
 
+	newIP := currentExternalIPv4
+	if isInternal {
+		newIP = currentInternalIPv4
+	}
 	if foundRecord == false {
 		// if the sub domain doesn't exist, add one
 		addRecordURL := "https://dnsapi.cn/Record.Create"
@@ -118,7 +122,7 @@ func dnspodRequestByToken(id string, token string, domain string, subDomain stri
 			"sub_domain":  {subDomain},
 			"record_type": {"A"},
 			"record_line": {"默认"},
-			"value":       {currentExternalIPv4},
+			"value":       {newIP},
 		})
 		if err != nil {
 			fmt.Printf("request record insert failed\n")
@@ -143,7 +147,7 @@ func dnspodRequestByToken(id string, token string, domain string, subDomain stri
 			"sub_domain":  {subDomain},
 			"record_type": {"A"},
 			"record_line": {"默认"},
-			"value":       {currentExternalIPv4},
+			"value":       {newIP},
 		})
 		if err != nil {
 			fmt.Printf("request record modify failed\n")
@@ -161,7 +165,7 @@ func dnspodRequestByToken(id string, token string, domain string, subDomain stri
 	return nil
 }
 
-func dnspodRequest(user string, password string, domain string, subDomain string) error {
+func dnspodRequest(user string, password string, domain string, subDomain string, isInternal bool) error {
 	needDomainList := false
 	if len(dnspodDomainList.Domains) == 0 {
 		needDomainList = true
@@ -254,6 +258,10 @@ func dnspodRequest(user string, password string, domain string, subDomain string
 		}
 	}
 
+	newIP := currentExternalIPv4
+	if isInternal {
+		newIP = currentInternalIPv4
+	}
 	if foundRecord == false {
 		// if the sub domain doesn't exist, add one
 		addRecordURL := "https://dnsapi.cn/Record.Create"
@@ -265,7 +273,7 @@ func dnspodRequest(user string, password string, domain string, subDomain string
 			"sub_domain":     {subDomain},
 			"record_type":    {"A"},
 			"record_line":    {"默认"},
-			"value":          {currentExternalIPv4},
+			"value":          {newIP},
 		})
 		if err != nil {
 			fmt.Printf("request record insert failed\n")
@@ -291,7 +299,7 @@ func dnspodRequest(user string, password string, domain string, subDomain string
 			"sub_domain":     {subDomain},
 			"record_type":    {"A"},
 			"record_line":    {"默认"},
-			"value":          {currentExternalIPv4},
+			"value":          {newIP},
 		})
 		if err != nil {
 			fmt.Printf("request record modify failed\n")
