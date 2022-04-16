@@ -67,7 +67,7 @@ func cloudflareRequest(user string, token string, domain string, subDomain strin
 			fmt.Println(err)
 			return err
 		} else {
-			fmt.Printf("[%v] A record created to cloudflare: %s.%s => %s\n", time.Now(), subDomain, domain, currentExternalIPv4)
+			fmt.Printf("[%v] A record created to cloudflare: %s.%s => %s\n", time.Now(), subDomain, domain, newIP)
 		}
 	} else {
 		// update
@@ -76,7 +76,7 @@ func cloudflareRequest(user string, token string, domain string, subDomain strin
 			fmt.Println(err)
 			return err
 		} else {
-			fmt.Printf("[%v] A record updated to cloudflare: %s.%s => %s\n", time.Now(), subDomain, domain, currentExternalIPv4)
+			fmt.Printf("[%v] A record updated to cloudflare: %s.%s => %s\n", time.Now(), subDomain, domain, newIP)
 		}
 	}
 

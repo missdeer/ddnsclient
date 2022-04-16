@@ -178,6 +178,8 @@ func updateDDNS(setting *Setting) {
 		}
 		currentInternalIPv6 = currentInternalIPsV6[0]
 	}
+	log.Println("current external ip:", currentExternalIPv4, currentExternalIPv6)
+	log.Println("current internal ip:", currentInternalIPv4, currentInternalIPv6)
 	basicAuth := func(v models.BasicAuthConfigurationItem) {
 		for {
 			if err := basicAuthorizeHttpRequest(v.UserName, v.Password, v.Url); err == nil {
@@ -240,10 +242,10 @@ func updateDDNS(setting *Setting) {
 			lastExternalIPv4 = currentExternalIPv4
 		}
 		if (networkStack == "ipv4" || networkStack == "dual") && len(currentInternalIPv4) != 0 {
-			lastExternalIPv4 = currentInternalIPv4
+			lastInternalIPv4 = currentInternalIPv4
 		}
 		if (networkStack == "ipv6" || networkStack == "dual") && len(currentExternalIPv6) != 0 {
-			lastInternalIPv6 = currentExternalIPv6
+			lastExternalIPv6 = currentExternalIPv6
 		}
 		if (networkStack == "ipv6" || networkStack == "dual") && len(currentInternalIPv6) != 0 {
 			lastInternalIPv6 = currentInternalIPv6

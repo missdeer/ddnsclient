@@ -198,7 +198,7 @@ func cloudxnsRequest(apiKey string, secretKey string, domain string, subDomain s
 			return err
 		}
 		defer resp.Body.Close()
-		fmt.Printf("A record inserted to cloudXNS: %s.%s => %s\n", subDomain, domain, currentExternalIPv4)
+		fmt.Printf("A record inserted to cloudXNS: %s.%s => %s\n", subDomain, domain, newIP)
 	}
 	return nil
 }
