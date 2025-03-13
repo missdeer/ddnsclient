@@ -1,7 +1,8 @@
 module github.com/missdeer/ddnsclient
 
-go 1.21
-toolchain go1.23.3
+go 1.23.0
+
+toolchain go1.23.7
 
 require github.com/cloudflare/cloudflare-go v0.115.0
 
